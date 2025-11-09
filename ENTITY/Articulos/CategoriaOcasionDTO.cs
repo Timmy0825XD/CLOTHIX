@@ -6,11 +6,10 @@ using System.Threading.Tasks;
 
 namespace ENTITY.Articulos
 {
-    public class ImagenArticuloDTO
+    public class CategoriaOcasionDTO
     {
         public int Id { get; set; }
-        public string Url { get; set; } = null!;
-        public int Orden { get; set; } = 1;
-        public char EsPrincipal { get; set; } = 'N';
+        public string Nombre { get; set; } = null!;
+        public string? Descripcion { get; set; }
     }
 }
