@@ -1,8 +1,10 @@
 ﻿@page "/carrito"
 @using ENTITY.Pedidos
+@using GUI.Components.Layout
 @using GUI.Services
 @inject CarritoService Carrito
 @inject NavigationManager Navigation
+@layout ClienteLayout
 @implements IDisposable
 
 <div class="carrito-container">

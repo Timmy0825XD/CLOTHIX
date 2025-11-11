@@ -546,18 +546,20 @@
 
     private void SeleccionarImagenes()
     {
-        var urlsSimuladas = new[] {
-        "https://via.placeholder.com/300x400/a855f7/ffffff?text=Producto+1",
-        "https://via.placeholder.com/300x400/ec4899/ffffff?text=Producto+2"
+        // ✅ URLs reales de tus imágenes en wwwroot/img/ropa
+        var urlsImagenes = new[] {
+        "/img/ropa/Camisa1.png",
+        "/img/ropa/Camisa2.png",
+        "/img/ropa/Camisa3.png"
     };
 
-        foreach (var url in urlsSimuladas)
+        foreach (var url in urlsImagenes)
         {
             nuevoProducto.Imagenes.Add(new ImagenArticuloDTO
             {
                 Url = url,
-                Orden = nuevoProducto.Imagenes.Count + 1, // ✅ 1, 2, 3, ...
-                EsPrincipal = !nuevoProducto.Imagenes.Any() ? 'S' : 'N' // Primera es 'S'
+                Orden = nuevoProducto.Imagenes.Count + 1,
+                EsPrincipal = !nuevoProducto.Imagenes.Any() ? 'S' : 'N'
             });
         }
     }
