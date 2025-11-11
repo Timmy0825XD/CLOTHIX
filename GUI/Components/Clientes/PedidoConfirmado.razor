@@ -1,0 +1,563 @@
+﻿@page "/pedido-confirmado/{IdPedido:int}"
+@using ENTITY.Pedidos
+@using BLL.Interfaces
+@inject IPedidoService PedidoService
+@inject NavigationManager Navigation
+
+<div class="confirmacion-container">
+    @if (cargando)
+    {
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Cargando información del pedido...</p>
+        </div>
+    }
+    else if (errorMessage != null)
+    {
+        <div class="error-container">
+            <div class="error-icon">❌</div>
+            <h2>Error al cargar el pedido</h2>
+            <p>@errorMessage</p>
+            <button class="btn-primary" @onclick="VolverAlCatalogo">
+                Volver al Catálogo
+            </button>
+        </div>
+    }
+    else if (pedido != null)
+    {
+        <div class="confirmacion-exito">
+            <div class="success-icon">✓</div>
+            <h1>¡Pedido Confirmado!</h1>
+            <p class="numero-pedido">Número de pedido: <strong>@pedido.NumeroPedido</strong></p>
+            <p class="mensaje-exito">Tu pedido ha sido recibido y está siendo procesado</p>
+
+            <!-- Información del pedido -->
+            <div class="info-card">
+                <div class="info-row">
+                    <span class="label">Fecha:</span>
+                    <span class="value">@pedido.FechaPedido.ToString("dd/MM/yyyy HH:mm")</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Estado:</span>
+                    <span class="badge-estado @GetEstadoClass(pedido.Estado)">@pedido.Estado</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Total:</span>
+                    <span class="value total">@pedido.Total.ToString("C")</span>
+                </div>
+            </div>
+
+            <!-- Productos -->
+            <div class="productos-card">
+                <h3>Productos</h3>
+                @foreach (var producto in pedido.Productos)
+                {
+                    <div class="producto-item">
+                        <div class="producto-imagen">
+                            @if (!string.IsNullOrEmpty(producto.ImagenUrl))
+                            {
+                                <img src="@producto.ImagenUrl" alt="@producto.NombreProducto" />
+                            }
+                            else
+                            {
+                                <div class="placeholder-imagen">📦</div>
+                            }
+                        </div>
+                        <div class="producto-info">
+                            <h4>@producto.NombreProducto</h4>
+                            <p>@producto.Marca</p>
+                            <p class="variante">@producto.Talla / @producto.Color</p>
+                            <p class="cantidad">Cantidad: @producto.Cantidad</p>
+                        </div>
+                        <div class="producto-precio">
+                            @producto.SubtotalLinea.ToString("C")
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Información de envío -->
+            <div class="envio-card">
+                <h3>Información de Envío</h3>
+                <div class="envio-info">
+                    <p><strong>@pedido.NombreCliente</strong></p>
+                    <p>@pedido.DireccionCompleta</p>
+                    <p>@pedido.Barrio</p>
+                    <p>@pedido.Ciudad, @pedido.Departamento</p>
+                    <p>Teléfono: @pedido.TelefonoPrincipal</p>
+                </div>
+            </div>
+
+            <!-- Resumen de pago -->
+            <div class="resumen-pago">
+                <h3>Resumen de Pago</h3>
+                <div class="resumen-linea">
+                    <span>Subtotal:</span>
+                    <span>@pedido.Subtotal.ToString("C")</span>
+                </div>
+                <div class="resumen-linea">
+                    <span>Envío:</span>
+                    <span class="envio-gratis">GRATIS</span>
+                </div>
+                <div class="resumen-linea">
+                    <span>IVA (19%):</span>
+                    <span>@pedido.Impuesto.ToString("C")</span>
+                </div>
+                <div class="resumen-divider"></div>
+                <div class="resumen-total">
+                    <span>Total Pagado:</span>
+                    <span>@pedido.Total.ToString("C")</span>
+                </div>
+                <div class="metodo-pago">
+                    <span>Método de pago: <strong>@pedido.MetodoPago</strong></span>
+                </div>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="info-adicional">
+                <div class="info-box">
+                    <div class="info-icon">📧</div>
+                    <div class="info-text">
+                        <p><strong>Confirmación enviada</strong></p>
+                        <p>Hemos enviado los detalles del pedido a <strong>@pedido.CorreoCliente</strong></p>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <div class="info-icon">🚚</div>
+                    <div class="info-text">
+                        <p><strong>Tiempo de entrega</strong></p>
+                        <p>Tu pedido llegará en 3-5 días hábiles</p>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <div class="info-icon">💬</div>
+                    <div class="info-text">
+                        <p><strong>¿Necesitas ayuda?</strong></p>
+                        <p>Contacta a nuestro soporte con tu número de pedido</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="acciones">
+                <button class="btn-secondary" @onclick="VerMisPedidos">
+                    Ver Mis Pedidos
+                </button>
+                <button class="btn-primary" @onclick="VolverAlCatalogo">
+                    Seguir Comprando
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .confirmacion-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 80px 20px;
+    }
+
+    .spinner {
+        width: 60px;
+        height: 60px;
+        border: 6px solid #f3f3f3;
+        border-top: 6px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .error-container {
+        text-align: center;
+        padding: 80px 20px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .error-icon {
+        font-size: 80px;
+        margin-bottom: 20px;
+    }
+
+    .confirmacion-exito {
+        text-align: center;
+    }
+
+    .success-icon {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        font-size: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 30px;
+        box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+    }
+
+    .confirmacion-exito h1 {
+        font-size: 36px;
+        font-weight: 700;
+        color: #1f2937;
+        margin: 0 0 16px 0;
+    }
+
+    .numero-pedido {
+        font-size: 18px;
+        color: #667eea;
+        margin: 0 0 8px 0;
+    }
+
+    .mensaje-exito {
+        font-size: 16px;
+        color: #6b7280;
+        margin: 0 0 40px 0;
+    }
+
+    .info-card {
+        background: white;
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 24px;
+        text-align: left;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+    .label {
+        font-size: 14px;
+        color: #6b7280;
+    }
+
+    .value {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+        .value.total {
+            font-size: 24px;
+            color: #10b981;
+        }
+
+    .badge-estado {
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .badge-pendiente {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .productos-card {
+        background: white;
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 24px;
+        text-align: left;
+    }
+
+        .productos-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0 0 20px 0;
+        }
+
+    .producto-item {
+        display: grid;
+        grid-template-columns: 80px 1fr auto;
+        gap: 16px;
+        padding: 16px;
+        background: #f9fafb;
+        border-radius: 8px;
+        margin-bottom: 12px;
+    }
+
+        .producto-item:last-child {
+            margin-bottom: 0;
+        }
+
+    .producto-imagen img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+
+    .placeholder-imagen {
+        width: 80px;
+        height: 80px;
+        background: #e5e7eb;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+    }
+
+    .producto-info h4 {
+        margin: 0 0 4px 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .producto-info p {
+        margin: 2px 0;
+        font-size: 14px;
+        color: #6b7280;
+    }
+
+    .producto-info .variante {
+        color: #667eea;
+        font-weight: 500;
+    }
+
+    .producto-precio {
+        font-size: 18px;
+        font-weight: 700;
+        color: #667eea;
+        display: flex;
+        align-items: center;
+    }
+
+    .envio-card {
+        background: white;
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 24px;
+        text-align: left;
+    }
+
+        .envio-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0 0 16px 0;
+        }
+
+    .envio-info p {
+        margin: 4px 0;
+        font-size: 14px;
+        color: #6b7280;
+    }
+
+    .resumen-pago {
+        background: white;
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 24px;
+        text-align: left;
+    }
+
+        .resumen-pago h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0 0 16px 0;
+        }
+
+    .resumen-linea {
+        display: flex;
+        justify-content: space-between;
+        margin: 8px 0;
+        font-size: 14px;
+        color: #6b7280;
+    }
+
+    .envio-gratis {
+        color: #10b981;
+        font-weight: 600;
+    }
+
+    .resumen-divider {
+        height: 1px;
+        background: #e5e7eb;
+        margin: 16px 0;
+    }
+
+    .resumen-total {
+        display: flex;
+        justify-content: space-between;
+        font-size: 20px;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 16px;
+    }
+
+    .metodo-pago {
+        text-align: center;
+        padding: 12px;
+        background: #f9fafb;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #6b7280;
+    }
+
+    .info-adicional {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+
+    .info-box {
+        display: flex;
+        gap: 16px;
+        padding: 20px;
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: 12px;
+        text-align: left;
+    }
+
+    .info-icon {
+        font-size: 32px;
+        flex-shrink: 0;
+    }
+
+    .info-text p {
+        margin: 4px 0;
+        font-size: 14px;
+        color: #0c4a6e;
+    }
+
+    .acciones {
+        display: flex;
+        gap: 16px;
+        justify-content: center;
+    }
+
+    .btn-primary, .btn-secondary {
+        padding: 14px 32px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        border: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+    .btn-secondary {
+        background: white;
+        color: #667eea;
+        border: 2px solid #667eea;
+    }
+
+        .btn-secondary:hover {
+            background: #f0f3ff;
+        }
+</style>
+
+@code {
+    [Parameter] public int IdPedido { get; set; }
+
+    private PedidoCompletoDTO? pedido;
+    private bool cargando = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarPedido();
+    }
+
+    private async Task CargarPedido()
+    {
+        try
+        {
+            cargando = true;
+            errorMessage = null;
+
+            var response = await PedidoService.ObtenerPedidoCompleto(IdPedido);
+
+            if (response.IsSuccess && response.Object != null)
+            {
+                pedido = response.Object;
+            }
+            else
+            {
+                errorMessage = response.Message ?? "Error al cargar el pedido";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private string GetEstadoClass(string estado)
+    {
+        return estado.ToLower() switch
+        {
+            "pendiente" => "badge-pendiente",
+            "confirmado" => "badge-confirmado",
+            "enviado" => "badge-enviado",
+            "entregado" => "badge-entregado",
+            _ => "badge-pendiente"
+        };
+    }
+
+    private void VerMisPedidos()
+    {
+        // Redirigir a la página de mis pedidos
+        Navigation.NavigateTo("/mis-pedidos");
+    }
+
+    private void VolverAlCatalogo()
+    {
+        Navigation.NavigateTo("/ClienteCatalogo");
+    }
+}
+

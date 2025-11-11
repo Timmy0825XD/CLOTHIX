@@ -6,6 +6,7 @@ using BLL.Interfaces;
 using DAL.Implementaciones;
 using DAL.Interfaces;
 using GUI.Components;
+using GUI.Services;
 using Oracle.ManagedDataAccess.Client;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -43,6 +44,8 @@ builder.Services.AddScoped<IRolService, RolService>();
 builder.Services.AddScoped<IArticuloServices, ArticuloServices>();
 builder.Services.AddScoped<ICategoriaServices, CategoriaServices>();
 builder.Services.AddScoped<IDireccionService, DireccionService>();
+
+builder.Services.AddScoped<CarritoService>();
 
 var app = builder.Build();
 
