@@ -14,6 +14,7 @@ namespace BLL.Implementaciones
     public class UsuarioService : IUsuarioService
     {
         private readonly IUsuarioDAO _usuarioDAO;
+        private static string _usuarioNombreCompleto;
 
         public UsuarioService(IUsuarioDAO usuarioDAO)
         {
@@ -33,7 +34,19 @@ namespace BLL.Implementaciones
                 return Response<LoginResponseDTO>.Fail("La contraseña es obligatoria");
             }
 
+            var response = await _usuarioDAO.Login(loginRequest);
+
+            if (response.IsSuccess)
+            {
+                _usuarioNombreCompleto = response.Object.NombreCompleto;
+            }
+
             return await _usuarioDAO.Login(loginRequest);
+        }
+
+        public string ObtenerNombreUsuario()
+        {
+            return _usuarioNombreCompleto;
         }
 
         public async Task<Response<int>> RegistrarUsuario(UsuarioDTO usuario)

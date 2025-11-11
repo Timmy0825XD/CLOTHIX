@@ -11,6 +11,7 @@ namespace BLL.Interfaces
     public interface IUsuarioService
     {
         Task<Response<LoginResponseDTO>> Login(LoginRequestDTO loginRequest);
+        string ObtenerNombreUsuario();
         Task<Response<int>> RegistrarUsuario(UsuarioDTO usuario);
         Task<Response<bool>> ActualizarUsuario(UsuarioDTO usuario);
         Task<Response<UsuarioDTO>> ObtenerTodosLosUsuarios();

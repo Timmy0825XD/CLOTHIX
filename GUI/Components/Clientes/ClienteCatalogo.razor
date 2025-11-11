@@ -528,23 +528,16 @@
     private string selectedGenero = "";
     private string selectedMarca = "";
     private string sortBy = "relevancia";
-
-    // Precio
     private decimal minPrice = 0;
-    private decimal maxPrice = 1000000;
-    private decimal maxPriceFilter = 1000000;
-
-    // Paginación
+    private decimal maxPrice = 5000000;
+    private decimal maxPriceFilter = 5000000;
     private int pageSize = 12;
     private int currentPage = 1;
-
-    // Listas de filtros dinámicos
     private List<string> categoriasTipo = new();
     private List<string> categoriasOcasion = new();
     private List<string> generos = new();
     private List<string> marcas = new();
 
-    // ========= Ciclo de vida =========
     protected override async Task OnInitializedAsync()
     {
         await LoadProducts();

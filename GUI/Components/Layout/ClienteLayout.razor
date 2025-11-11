@@ -1,4 +1,7 @@
-﻿@inherits LayoutComponentBase
+﻿@using BLL.Interfaces
+@using ENTITY.Usuarios
+@inherits LayoutComponentBase
+@inject IUsuarioService UsuarioService
 
 <div class="layout-container">
     <div class="page">
@@ -8,7 +11,6 @@
         </aside>
 
         <main class="main-content @(isMenuVisible ? "" : "expanded")">
-
             <div class="header">
                 <div class="left">
                     <button class="btn-toggle" @onclick="ToggleMenu">
@@ -34,8 +36,21 @@
 
 @code {
     private bool isMenuVisible = true;
+    private string UserDisplayName { get; set; } = "Cliente"; // Valor por defecto
 
-    private string UserDisplayName { get; set; } = "Cliente";
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Obtener el nombre del usuario del servicio (ya autenticado)
+            UserDisplayName = UsuarioService.ObtenerNombreUsuario();
+        }
+        catch (Exception ex)
+        {
+            UserDisplayName = "Error al obtener nombre"; // Manejo de errores
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
 
     private void ToggleMenu() => isMenuVisible = !isMenuVisible;
 }
