@@ -37,6 +37,8 @@ builder.Services.AddScoped<IRolDAO>(sp => new RolDAO(connectionString));
 builder.Services.AddScoped<IArticuloDAO>(sp => new ArticuloDAO(connectionString));
 builder.Services.AddScoped<ICategoriaDAO>(sp => new CategoriaDAO(connectionString));
 builder.Services.AddScoped<IDireccionDAO>(sp => new DireccionDAO(connectionString));
+builder.Services.AddScoped<IPedidoDAO>(sp => new PedidoDAO(connectionString));
+
 
 // ===== REGISTRAR SERVICIOS DE LA CAPA BLL =====
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
@@ -44,6 +46,8 @@ builder.Services.AddScoped<IRolService, RolService>();
 builder.Services.AddScoped<IArticuloServices, ArticuloServices>();
 builder.Services.AddScoped<ICategoriaServices, CategoriaServices>();
 builder.Services.AddScoped<IDireccionService, DireccionService>();
+builder.Services.AddScoped<IPedidoService, PedidoService>();
+
 
 builder.Services.AddScoped<CarritoService>();
 

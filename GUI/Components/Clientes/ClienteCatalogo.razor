@@ -3,9 +3,21 @@
 @using DAL.Interfaces
 @using ENTITY.Articulos
 @using ENTITY.Utilidades
+@using ENTITY.Pedidos
+@using GUI.Services
+@using GUI.Components.Clientes
+@inject CarritoService Carrito
 @inject IArticuloDAO ArticuloDAO
 @inject NavigationManager Navigation
 @layout ClienteLayout
+@implements IDisposable
+
+<!-- Indicador del carrito -->
+<div class="carrito-indicator">
+    <button class="btn-carrito" @onclick="IrAlCarrito">
+        🛒 Carrito (@cantidadCarrito)
+    </button>
+</div>
 
 <section class="catalogo">
     @if (isLoading)
@@ -151,9 +163,9 @@
 
                         <div class="actions">
                             <button class="btn"
-                                    @onclick="(e) => ViewDetails(articulo, e)"
+                                    @onclick="(e) => AbrirModalAgregar(articulo.IdArticulo, e)"
                                     @onclick:stopPropagation="true">
-                                Ver opciones
+                                🛒 Agregar al Carrito
                             </button>
                         </div>
                     </div>
@@ -180,7 +192,37 @@
     }
 </section>
 
+<!-- Modal para agregar al carrito -->
+<ModalAgregarCarrito IdArticulo="idArticuloSeleccionado"
+                     mostrarModal="mostrarModalAgregar"
+                     OnCerrar="CerrarModalAgregar" />
+
 <style>
+    .carrito-indicator {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        z-index: 999;
+    }
+
+    .btn-carrito {
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        transition: all 0.3s;
+    }
+
+        .btn-carrito:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
     .catalogo {
         max-width: 1400px;
         margin: 0 auto;
@@ -538,8 +580,18 @@
     private List<string> generos = new();
     private List<string> marcas = new();
 
+    // ========= Variables para el carrito =========
+    private int cantidadCarrito = 0;
+    private bool mostrarModalAgregar = false;
+    private int idArticuloSeleccionado = 0;
+
+    // ========= Inicialización =========
     protected override async Task OnInitializedAsync()
     {
+        // Suscribirse a cambios en el carrito
+        Carrito.OnChange += ActualizarContadorCarrito;
+        ActualizarContadorCarrito();
+
         await LoadProducts();
     }
 
@@ -712,5 +764,36 @@
     private void ViewDetails(ArticuloListaDTO articulo, MouseEventArgs? e = null)
     {
         Navigation.NavigateTo($"/cliente/producto/{articulo.IdArticulo}");
+    }
+
+    // ========= Métodos del Carrito =========
+    private void ActualizarContadorCarrito()
+    {
+        cantidadCarrito = Carrito.ObtenerCantidadTotal();
+        StateHasChanged();
+    }
+
+    private void AbrirModalAgregar(int idArticulo, MouseEventArgs e)
+    {
+        idArticuloSeleccionado = idArticulo;
+        mostrarModalAgregar = true;
+    }
+
+    private void CerrarModalAgregar()
+    {
+        mostrarModalAgregar = false;
+        idArticuloSeleccionado = 0;
+        StateHasChanged();
+    }
+
+    private void IrAlCarrito()
+    {
+        Navigation.NavigateTo("/carrito");
+    }
+
+    // ========= IDisposable =========
+    public void Dispose()
+    {
+        Carrito.OnChange -= ActualizarContadorCarrito;
     }
 }
