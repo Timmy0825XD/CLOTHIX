@@ -49,6 +49,7 @@ builder.Services.AddScoped<IDireccionService, DireccionService>();
 builder.Services.AddScoped<IPedidoService, PedidoService>();
 
 
+builder.Services.AddScoped<SesionService>();
 builder.Services.AddScoped<CarritoService>();
 
 var app = builder.Build();

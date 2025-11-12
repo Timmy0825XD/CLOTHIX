@@ -180,7 +180,7 @@ namespace DAL.Implementaciones
                             }
                         }
 
-                        return Response<PedidoDTO>.Done("Pedidos obtenidos exitosamente", list: pedidos);
+                        return Response<PedidoDTO>.Done("Pedidos obtenidos exitosamente", default, pedidos);
                     }
                 }
             }
@@ -323,7 +323,7 @@ namespace DAL.Implementaciones
                             }
                         }
 
-                        return Response<PedidoListaDTO>.Done("Pedidos obtenidos exitosamente", list: pedidos);
+                        return Response<PedidoListaDTO>.Done("Pedidos obtenidos exitosamente", default, pedidos);
                     }
                 }
             }
@@ -455,7 +455,7 @@ namespace DAL.Implementaciones
                             }
                         }
 
-                        return Response<MetodoPagoDTO>.Done("Métodos de pago obtenidos exitosamente", list: metodos);
+                        return Response<MetodoPagoDTO>.Done("Métodos de pago obtenidos exitosamente", default, metodos);
                     }
                 }
             }

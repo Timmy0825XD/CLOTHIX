@@ -3,9 +3,11 @@
 @using ENTITY.Usuarios
 @using ENTITY.Utilidades
 @using BLL.Interfaces
+@using GUI.Services
 @layout AuthLayout
 @inject NavigationManager NavigationManager
 @inject IUsuarioService UsuarioService
+@inject SesionService Sesion
 
 <div class="login-container">
     <div class="login-card">
@@ -82,28 +84,35 @@
             };
 
             var resultado = await UsuarioService.Login(loginRequest);
-            Console.WriteLine(resultado.Message);
 
-            if (resultado.IsSuccess)
+            Console.WriteLine($"📝 Login resultado: {resultado.Message}");
+
+            if (resultado.IsSuccess && resultado.Object != null)
             {
+                // ✅✅✅ GUARDAR SESIÓN (ahora es async)
+                await Sesion.IniciarSesion(resultado.Object);
+
+                Console.WriteLine($"✅ Usuario logueado: {resultado.Object.NombreCompleto} (ID: {resultado.Object.IdUsuario})");
+
+                // Redirigir según el rol
                 if (resultado.Object.IdRol == 1)
                 {
-                    NavigationManager.NavigateTo("/AdminDashboard");
+                    NavigationManager.NavigateTo("/AdminDashboard", forceLoad: true);
                 }
                 else
                 {
-                    NavigationManager.NavigateTo("/ClienteCatalogo");
+                    NavigationManager.NavigateTo("/ClienteCatalogo", forceLoad: true);
                 }
             }
             else
             {
-                mensajeError = resultado.Message;
+                mensajeError = resultado.Message ?? "Credenciales incorrectas";
             }
         }
         catch (Exception ex)
         {
             mensajeError = $"Error inesperado: {ex.Message}";
-            Console.WriteLine($"Error en login: {ex}");
+            Console.WriteLine($"❌ Error en login: {ex}");
         }
         finally
         {

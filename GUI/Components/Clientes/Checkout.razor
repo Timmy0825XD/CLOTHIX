@@ -9,6 +9,7 @@
 @inject CarritoService Carrito
 @inject IPedidoService PedidoService
 @inject NavigationManager Navigation
+@inject SesionService Sesion
 
 <div class="checkout-container">
     <div class="checkout-header">
@@ -248,11 +249,24 @@
     private string? mensajeError;
 
     // NOTA: En una aplicación real, obtendrías el ID del usuario de la sesión
-    private int idUsuario = 1; // ID del usuario logueado
-    private int idDireccion = 1; // ID de la dirección seleccionada
+    private int idUsuarioAutenticado = 0;
+    private int idDireccion = 1;
 
     protected override async Task OnInitializedAsync()
     {
+        // ✅ Obtener usuario de la sesión (ahora es async)
+        var usuario = await Sesion.ObtenerUsuarioActual();
+
+        if (usuario == null)
+        {
+            Console.WriteLine("❌ No hay usuario en sesión - redirigiendo al login");
+            Navigation.NavigateTo("/", forceLoad: true);
+            return;
+        }
+
+        idUsuarioAutenticado = usuario.IdUsuario;
+        Console.WriteLine($"✅ Usuario en checkout: {usuario.NombreCompleto} (ID: {idUsuarioAutenticado})");
+
         items = Carrito.ObtenerItems();
         ActualizarTotales();
         await CargarMetodosPago();
@@ -338,13 +352,19 @@
     {
         try
         {
+            if (idUsuarioAutenticado <= 0)
+            {
+                mensajeError = "Error: Usuario no identificado. Por favor, inicia sesión nuevamente.";
+                return;
+            }
+
             procesandoPedido = true;
             mensajeError = null;
 
-            // Crear el pedido
+            // ✅ USAR ID DEL USUARIO AUTENTICADO
             var pedido = new CrearPedidoDTO
             {
-                IdUsuario = idUsuario,
+                IdUsuario = idUsuarioAutenticado, // ✅ ID REAL
                 IdDireccionEnvio = idDireccion,
                 IdMetodoPago = metodoPagoSeleccionado,
                 Productos = items.Select(i => new ProductoPedidoDTO
@@ -354,12 +374,13 @@
                 }).ToList()
             };
 
+            Console.WriteLine($"🛒 Creando pedido para usuario ID: {pedido.IdUsuario}");
+
             var response = await PedidoService.CrearPedido(pedido);
 
             if (response.IsSuccess)
             {
                 Carrito.Limpiar();
-
                 Navigation.NavigateTo($"/pedido-confirmado/{response.Object}");
             }
             else
@@ -376,6 +397,7 @@
             procesandoPedido = false;
         }
     }
+
 
     private void VolverAlCarrito()
     {

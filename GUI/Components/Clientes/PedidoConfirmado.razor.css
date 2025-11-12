@@ -1,0 +1,562 @@
+﻿/* ==================== WRAPPER ==================== */
+.confirmacion-wrapper {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 40%, #f093fb 100%);
+    padding: 40px 20px;
+}
+
+/* ==================== ESTADOS DE CARGA Y ERROR ==================== */
+
+.error-animation {
+    font-size: 80px;
+    margin-bottom: 24px;
+    animation: shake 0.5s;
+}
+
+.error-state h2 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0 0 12px 0;
+}
+
+.error-message {
+    font-size: 16px;
+    color: #6b7280;
+    margin: 0 0 32px 0;
+}
+
+/* ==================== CONFIRMACIÓN CONTENT ==================== */
+.confirmacion-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* ==================== SUCCESS HEADER ==================== */
+.success-header {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 48px 32px;
+    text-align: center;
+    margin-bottom: 32px;
+    box-shadow: 0 20px 25px rgba(0,0,0,0.15);
+}
+
+.success-animation {
+    margin-bottom: 24px;
+}
+
+.checkmark-circle {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+    animation: scaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    color: white;
+    font-size: 50px;
+}
+
+.checkmark {
+    width: 50px;
+    height: 30px;
+    border-bottom: 6px solid white;
+    border-right: 6px solid white;
+    transform: rotate(45deg);
+    animation: drawCheck 0.5s 0.3s ease-out forwards;
+    opacity: 0;
+}
+
+.success-title {
+    font-size: 42px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0 0 16px 0;
+}
+
+.pedido-numero {
+    font-size: 18px;
+    color: #6b7280;
+    margin: 0 0 12px 0;
+}
+
+    .pedido-numero strong {
+        color: #667eea;
+        font-weight: 700;
+    }
+
+.success-message {
+    font-size: 16px;
+    color: #6b7280;
+    margin: 0;
+}
+
+/* ==================== DETAILS GRID ==================== */
+.details-grid {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 32px;
+    margin-bottom: 32px;
+}
+
+.left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* ==================== SECTION CARDS ==================== */
+.section-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+    transition: all 0.3s;
+}
+
+    .section-card:hover {
+        box-shadow: 0 20px 25px rgba(0,0,0,0.15);
+    }
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+    .section-header h3 {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1f2937;
+        margin: 0;
+    }
+
+.badge-cantidad {
+    padding: 6px 14px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+/* ==================== PRODUCTOS ==================== */
+.productos-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.producto-item-modern {
+    display: grid;
+    grid-template-columns: 100px 1fr auto;
+    gap: 20px;
+    padding: 16px;
+    background: #f3f4f6;
+    border-radius: 16px;
+    transition: all 0.3s;
+}
+
+.producto-imagen-wrapper {
+    width: 100px;
+    height: 100px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.producto-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.producto-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    background: #e5e7eb;
+}
+
+.producto-detalles {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    justify-content: center;
+}
+
+.producto-nombre {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+}
+
+.producto-marca {
+    font-size: 13px;
+    color: #667eea;
+    font-weight: 600;
+    margin: 0;
+}
+
+.producto-variantes {
+    display: flex;
+    gap: 8px;
+    margin: 4px 0;
+}
+
+.variante-tag {
+    padding: 4px 10px;
+    background: white;
+    color: #6b7280;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid #e5e7eb;
+}
+
+.producto-cantidad-texto {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.producto-precio-section {
+    display: flex;
+    align-items: center;
+}
+
+.producto-precio-total {
+    font-size: 20px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0;
+}
+
+/* ==================== ENVÍO ==================== */
+.envio-detalles {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.envio-grupo {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    background: #f3f4f6;
+    border-radius: 12px;
+}
+
+.envio-icon {
+    font-size: 28px;
+    flex-shrink: 0;
+}
+
+.envio-label {
+    font-size: 12px;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+}
+
+.envio-valor {
+    font-size: 15px;
+    color: #1f2937;
+    font-weight: 600;
+    margin: 0;
+}
+
+.envio-valor-secundario {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 2px 0 0 0;
+}
+
+/* ==================== RESUMEN ==================== */
+
+.resumen-contenido {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.resumen-linea {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 15px;
+}
+
+.resumen-label {
+    color: #6b7280;
+}
+
+.resumen-valor {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.resumen-divider {
+    height: 2px;
+    background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+    margin: 8px 0;
+}
+
+.resumen-total-linea {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-radius: 12px;
+}
+
+.resumen-total-label {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.resumen-total-valor {
+    font-size: 28px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.metodo-pago-info {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    padding: 16px;
+    background: #f3f4f6;
+    border-radius: 12px;
+    margin-top: 8px;
+}
+
+.metodo-pago-icon {
+    font-size: 28px;
+}
+
+.metodo-label {
+    font-size: 12px;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 4px 0;
+}
+
+.metodo-valor {
+    font-size: 15px;
+    color: #1f2937;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* ==================== INFO BOXES ==================== */
+.info-boxes {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.info-box-modern {
+    display: flex;
+    gap: 16px;
+    padding: 20px;
+    background: #ffffff;
+    border: 2px solid #e5e7eb;
+    border-radius: 16px;
+    transition: all 0.3s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.info-box-icon {
+    font-size: 32px;
+    flex-shrink: 0;
+}
+
+.info-box-content h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0 0 6px 0;
+}
+
+.info-box-content p {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* ==================== ACCIONES FOOTER ==================== */
+.acciones-footer {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-action {
+    padding: 16px 32px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-secondary {
+    background: #ffffff;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+/* ==================== ANIMACIONES ==================== */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-10px);
+    }
+
+    20%, 40%, 60%, 80% {
+        transform: translateX(10px);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0);
+    }
+
+    to {
+        transform: scale(1);
+    }
+}
+
+@keyframes drawCheck {
+    to {
+        opacity: 1;
+    }
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 1024px) {
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .confirmacion-wrapper {
+        padding: 24px 16px;
+    }
+
+    .success-header {
+        padding: 32px 24px;
+    }
+
+    .success-title {
+        font-size: 32px;
+    }
+
+    .checkmark-circle {
+        width: 80px;
+        height: 80px;
+    }
+
+    .section-card {
+        padding: 20px;
+    }
+
+    .producto-item-modern {
+        grid-template-columns: 80px 1fr;
+        gap: 16px;
+    }
+
+    .producto-precio-section {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+        padding-top: 12px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .acciones-footer {
+        flex-direction: column;
+    }
+
+    .btn-action {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .success-title {
+        font-size: 26px;
+    }
+
+    .pedido-numero {
+        font-size: 16px;
+    }
+
+    .producto-imagen-wrapper {
+        width: 70px;
+        height: 70px;
+    }
+
+    .producto-item-modern {
+        grid-template-columns: 70px 1fr;
+    }
+}

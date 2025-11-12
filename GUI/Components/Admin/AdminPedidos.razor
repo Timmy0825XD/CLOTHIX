@@ -1,112 +1,123 @@
 ﻿@page "/AdminPedidos"
 @using System.Collections.Generic
+@using ENTITY.Pedidos
+@using BLL.Interfaces
+@inject IPedidoService PedidoService
+@inject NavigationManager Navigation
 
 <div class="container">
     <div class="header-section">
         <h2 class="page-title">Gestión de Pedidos</h2>
-        <button class="btn-primary" @onclick="NuevoPedido">
-            <span class="icon">➕</span>
-            Nuevo Pedido
-        </button>
     </div>
 
-    <div class="content-card">
-        <div class="filters-row">
-            <div class="search-box">
-                <span class="search-icon">🔍</span>
-                <input type="text"
-                       placeholder="Buscar pedidos..."
-                       class="search-input"
-                       @bind="searchTerm"
-                       @bind:event="oninput" />
-            </div>
-            <div class="filter-group">
-                <select class="filter-select" @bind="filterStatus">
-                    <option value="">Todos los estados</option>
-                    <option value="pending">Pendiente</option>
-                    <option value="processing">En Proceso</option>
-                    <option value="shipped">Enviado</option>
-                    <option value="delivered">Entregado</option>
-                    <option value="cancelled">Cancelado</option>
-                </select>
-                <input type="date" class="filter-date" />
-            </div>
-            <button class="btn-secondary">
-                <span class="icon">📥</span>
-                Exportar
-            </button>
+    @if (cargando)
+    {
+        <div class="loading-container">
+            <div class="spinner"></div>
+            <p>Cargando pedidos...</p>
         </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="error-alert">
+            <span>⚠️</span>
+            <p>@errorMessage</p>
+        </div>
+    }
+    else
+    {
+        <div class="content-card">
+            <div class="filters-row">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text"
+                           placeholder="Buscar pedidos..."
+                           class="search-input"
+                           @bind="searchTerm"
+                           @bind:event="oninput" />
+                </div>
+                <div class="filter-group">
+                    <select class="filter-select" @bind="filterStatus">
+                        <option value="">Todos los estados</option>
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Confirmado">Confirmado</option>
+                        <option value="Enviado">Enviado</option>
+                        <option value="Entregado">Entregado</option>
+                        <option value="Cancelado">Cancelado</option>
+                    </select>
+                    <input type="date" class="filter-date" @bind="filterDate" @bind:format="yyyy-MM-dd" />
+                </div>
+                <button class="btn-secondary" @onclick="ExportarPedidos">
+                    <span class="icon">📥</span>
+                    Exportar
+                </button>
+            </div>
 
-        <div class="table-wrapper">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>ID Pedido</th>
-                        <th>Cliente</th>
-                        <th>Fecha</th>
-                        <th>Total</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var pedido in PedidosFiltrados)
-                    {
-                        <tr class="table-row">
-                            <td class="order-id">@pedido.Id</td>
-                            <td class="customer-info">
-                                <div class="customer-name">@pedido.NombreCliente</div>
-                                <div class="customer-email">@pedido.EmailCliente</div>
-                            </td>
-                            <td class="order-date">@pedido.Fecha.ToString("dd/MM/yyyy")</td>
-                            <td class="order-total">$@pedido.Total.ToString("N2")</td>
-                            <td>
-                                <select class="status-select @GetStatusClass(pedido.Estado)"
-                                        @onchange="@((e) => CambiarEstado(pedido, e.Value.ToString()))">
-                                    <option value="pending" selected="@(pedido.Estado == "pending")">Pendiente</option>
-                                    <option value="processing" selected="@(pedido.Estado == "processing")">En Proceso</option>
-                                    <option value="shipped" selected="@(pedido.Estado == "shipped")">Enviado</option>
-                                    <option value="delivered" selected="@(pedido.Estado == "delivered")">Entregado</option>
-                                    <option value="cancelled" selected="@(pedido.Estado == "cancelled")">Cancelado</option>
-                                </select>
-                            </td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn-action btn-view" @onclick="() => VerDetalles(pedido)" title="Ver Detalles">
-                                        <span>👁️</span>
-                                    </button>
-                                    <button class="btn-action btn-edit" @onclick="() => EditarPedido(pedido)" title="Editar">
-                                        <span>✏️</span>
-                                    </button>
-                                    <button class="btn-action btn-invoice" @onclick="() => GenerarFactura(pedido)" title="Generar Factura">
-                                        <span>📄</span>
-                                    </button>
-                                    <button class="btn-action btn-delete" @onclick="() => EliminarPedido(pedido)" title="Eliminar">
-                                        <span>🗑️</span>
-                                    </button>
-                                </div>
-                            </td>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Número Pedido</th>
+                            <th>Cliente</th>
+                            <th>Fecha</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-
-        @if (!PedidosFiltrados.Any())
-        {
-            <div class="empty-state">
-                <span class="empty-icon">📦</span>
-                <p>No se encontraron pedidos</p>
+                    </thead>
+                    <tbody>
+                        @foreach (var pedido in PedidosFiltrados)
+                        {
+                            <tr class="table-row">
+                                <td class="order-id">@pedido.NumeroPedido</td>
+                                <td class="customer-info">
+                                    <div class="customer-name">@pedido.NombreCliente</div>
+                                    <div class="customer-email">@pedido.CorreoCliente</div>
+                                </td>
+                                <td class="order-date">@pedido.FechaPedido.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="order-total">@pedido.Total.ToString("C")</td>
+                                <td>
+                                    <select class="status-select @GetStatusClass(pedido.Estado)"
+                                            @onchange="@((e) => CambiarEstado(pedido, e.Value.ToString()))">
+                                        <option value="Pendiente" selected="@(pedido.Estado == "Pendiente")">Pendiente</option>
+                                        <option value="Confirmado" selected="@(pedido.Estado == "Confirmado")">Confirmado</option>
+                                        <option value="Enviado" selected="@(pedido.Estado == "Enviado")">Enviado</option>
+                                        <option value="Entregado" selected="@(pedido.Estado == "Entregado")">Entregado</option>
+                                        <option value="Cancelado" selected="@(pedido.Estado == "Cancelado")">Cancelado</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-action btn-view" @onclick="() => VerDetalles(pedido)" title="Ver Detalles">
+                                            <span>👁️</span>
+                                        </button>
+                                        <button class="btn-action btn-delete" @onclick="() => CancelarPedido(pedido)" title="Cancelar">
+                                            <span>🗑️</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
-        }
-    </div>
+
+            @if (!PedidosFiltrados.Any())
+            {
+                <div class="empty-state">
+                    <span class="empty-icon">📦</span>
+                    <p>No se encontraron pedidos</p>
+                </div>
+            }
+        </div>
+    }
 
     @if (mostrarDetalles && pedidoSeleccionado != null)
     {
         <div class="modal-overlay" @onclick="CerrarDetalles">
             <div class="modal-content" @onclick:stopPropagation>
                 <div class="modal-header">
-                    <h3>Detalles del Pedido @pedidoSeleccionado.Id</h3>
+                    <h3>Detalles del Pedido @pedidoSeleccionado.NumeroPedido</h3>
                     <button class="btn-close" @onclick="CerrarDetalles">✕</button>
                 </div>
                 <div class="modal-body">
@@ -119,11 +130,11 @@
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Email:</span>
-                                <span class="detail-value">@pedidoSeleccionado.EmailCliente</span>
+                                <span class="detail-value">@pedidoSeleccionado.CorreoCliente</span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Teléfono:</span>
-                                <span class="detail-value">@pedidoSeleccionado.TelefonoCliente</span>
+                                <span class="detail-value">@pedidoSeleccionado.TelefonoPrincipal</span>
                             </div>
                         </div>
                     </div>
@@ -132,40 +143,100 @@
                         <h4>Información del Pedido</h4>
                         <div class="detail-grid">
                             <div class="detail-item">
-                                <span class="detail-label">ID:</span>
-                                <span class="detail-value">@pedidoSeleccionado.Id</span>
+                                <span class="detail-label">Número:</span>
+                                <span class="detail-value">@pedidoSeleccionado.NumeroPedido</span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Fecha:</span>
-                                <span class="detail-value">@pedidoSeleccionado.Fecha.ToString("dd/MM/yyyy HH:mm")</span>
+                                <span class="detail-value">@pedidoSeleccionado.FechaPedido.ToString("dd/MM/yyyy HH:mm")</span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Estado:</span>
                                 <span class="detail-value status-badge @GetStatusClass(pedidoSeleccionado.Estado)">
-                                    @GetStatusText(pedidoSeleccionado.Estado)
+                                    @pedidoSeleccionado.Estado
                                 </span>
                             </div>
                             <div class="detail-item">
-                                <span class="detail-label">Total:</span>
-                                <span class="detail-value total-amount">$@pedidoSeleccionado.Total.ToString("N2")</span>
+                                <span class="detail-label">Método de Pago:</span>
+                                <span class="detail-value">@pedidoSeleccionado.MetodoPago</span>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>Dirección de Envío</h4>
+                        <div class="direccion-box">
+                            <p><strong>@pedidoSeleccionado.DireccionCompleta</strong></p>
+                            <p>@pedidoSeleccionado.Barrio</p>
+                            <p>@pedidoSeleccionado.Ciudad, @pedidoSeleccionado.Departamento</p>
                         </div>
                     </div>
 
                     <div class="detail-section">
                         <h4>Productos</h4>
                         <div class="products-list">
-                            @foreach (var item in pedidoSeleccionado.Items)
+                            @foreach (var item in pedidoSeleccionado.Productos)
                             {
                                 <div class="product-item">
+                                    @if (!string.IsNullOrEmpty(item.ImagenUrl))
+                                    {
+                                        <img src="@item.ImagenUrl" alt="@item.NombreProducto" class="product-image" />
+                                    }
                                     <div class="product-info">
-                                        <span class="product-name">@item.ProductoNombre</span>
-                                        <span class="product-quantity">x@item.Cantidad</span>
+                                        <span class="product-name">@item.NombreProducto</span>
+                                        <span class="product-details">@item.Marca - @item.Talla - @item.Color</span>
+                                        <span class="product-sku">SKU: @item.CodigoSKU</span>
+                                        <span class="product-quantity">Cantidad: <strong>@item.Cantidad</strong></span>
                                     </div>
-                                    <span class="product-price">$@item.PrecioUnitario.ToString("N2")</span>
+                                    <div class="product-prices">
+                                        <span class="product-unit-price">@item.PrecioUnitario.ToString("C") c/u</span>
+                                        <span class="product-subtotal">@item.SubtotalLinea.ToString("C")</span>
+                                    </div>
                                 </div>
                             }
                         </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>Resumen de Pago</h4>
+                        <div class="payment-summary">
+                            <div class="summary-row">
+                                <span>Subtotal:</span>
+                                <span>@pedidoSeleccionado.Subtotal.ToString("C")</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>Costo de Envío:</span>
+                                <span>@pedidoSeleccionado.CostoEnvio.ToString("C")</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>IVA (19%):</span>
+                                <span>@pedidoSeleccionado.Impuesto.ToString("C")</span>
+                            </div>
+                            <div class="summary-row total-row">
+                                <span>Total:</span>
+                                <span>@pedidoSeleccionado.Total.ToString("C")</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (mostrarConfirmacion)
+    {
+        <div class="modal-overlay" @onclick="CerrarConfirmacion">
+            <div class="modal-content confirmation-modal" @onclick:stopPropagation>
+                <div class="modal-header">
+                    <h3>Confirmar Cancelación</h3>
+                    <button class="btn-close" @onclick="CerrarConfirmacion">✕</button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Está seguro de cancelar el pedido <strong>@pedidoParaCancelar?.NumeroPedido</strong>?</p>
+                    <p class="warning-text">Esta acción no se puede deshacer.</p>
+                    <div class="confirmation-buttons">
+                        <button class="btn-secondary" @onclick="CerrarConfirmacion">No, mantener pedido</button>
+                        <button class="btn-danger" @onclick="ConfirmarCancelacion">Sí, cancelar pedido</button>
                     </div>
                 </div>
             </div>
@@ -200,26 +271,6 @@
         margin: 0;
     }
 
-    .btn-primary {
-        background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
-        color: white;
-        padding: 12px 24px;
-        border-radius: 12px;
-        border: none;
-        font-weight: 500;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 6px rgba(168, 85, 247, 0.2);
-    }
-
-        .btn-primary:hover {
-            box-shadow: 0 6px 12px rgba(168, 85, 247, 0.3);
-            transform: translateY(-2px);
-        }
-
     .btn-secondary {
         padding: 12px 24px;
         border: 1px solid #e5e7eb;
@@ -234,6 +285,63 @@
 
         .btn-secondary:hover {
             background: #f9fafb;
+        }
+
+    .btn-danger {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 12px;
+        background: #ef4444;
+        color: white;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 60px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid #e5e7eb;
+        border-top: 4px solid #a855f7;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 16px;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .error-alert {
+        background: #fee2e2;
+        border: 1px solid #fecaca;
+        border-radius: 12px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #991b1b;
+    }
+
+        .error-alert span {
+            font-size: 24px;
         }
 
     .content-card {
@@ -381,27 +489,27 @@
         transition: all 0.2s ease;
     }
 
-        .status-select.pending {
+        .status-select.Pendiente {
             background-color: #fef3c7;
             color: #92400e;
         }
 
-        .status-select.processing {
+        .status-select.Confirmado {
             background-color: #dbeafe;
             color: #1e40af;
         }
 
-        .status-select.shipped {
+        .status-select.Enviado {
             background-color: #e0e7ff;
             color: #4338ca;
         }
 
-        .status-select.delivered {
+        .status-select.Entregado {
             background-color: #d1fae5;
             color: #065f46;
         }
 
-        .status-select.cancelled {
+        .status-select.Cancelado {
             background-color: #fee2e2;
             color: #991b1b;
         }
@@ -436,15 +544,6 @@
 
         .btn-edit:hover {
             background: #bfdbfe;
-        }
-
-    .btn-invoice {
-        background: #fef3c7;
-        color: #d97706;
-    }
-
-        .btn-invoice:hover {
-            background: #fde68a;
         }
 
     .btn-delete {
@@ -486,11 +585,15 @@
     .modal-content {
         background: white;
         border-radius: 16px;
-        max-width: 700px;
+        max-width: 800px;
         width: 100%;
         max-height: 90vh;
         overflow-y: auto;
         box-shadow: 0 20px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .confirmation-modal {
+        max-width: 500px;
     }
 
     .modal-header {
@@ -575,11 +678,17 @@
         font-weight: 500;
     }
 
-    .total-amount {
-        font-size: 20px;
-        font-weight: bold;
-        color: #a855f7;
+    .direccion-box {
+        background: #f9fafb;
+        padding: 16px;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
     }
+
+        .direccion-box p {
+            margin: 4px 0;
+            color: #4b5563;
+        }
 
     .products-list {
         display: flex;
@@ -589,36 +698,102 @@
 
     .product-item {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
+        gap: 16px;
         padding: 12px;
         background: #f9fafb;
+        border-radius: 8px;
+        align-items: center;
+    }
+
+    .product-image {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
         border-radius: 8px;
     }
 
     .product-info {
+        flex: 1;
         display: flex;
-        gap: 12px;
-        align-items: center;
+        flex-direction: column;
+        gap: 4px;
     }
 
     .product-name {
-        font-weight: 500;
+        font-weight: 600;
         color: #1f2937;
+    }
+
+    .product-details {
+        font-size: 12px;
+        color: #6b7280;
+    }
+
+    .product-sku {
+        font-size: 11px;
+        color: #9ca3af;
     }
 
     .product-quantity {
         font-size: 12px;
         color: #6b7280;
-        background: white;
-        padding: 2px 8px;
-        border-radius: 4px;
     }
 
-    .product-price {
+    .product-prices {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+    }
+
+    .product-unit-price {
+        font-size: 12px;
+        color: #6b7280;
+    }
+
+    .product-subtotal {
         font-weight: 600;
         color: #a855f7;
+        font-size: 16px;
     }
+
+    .payment-summary {
+        background: #f9fafb;
+        padding: 16px;
+        border-radius: 12px;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        color: #4b5563;
+    }
+
+    .total-row {
+        border-top: 2px solid #e5e7eb;
+        margin-top: 8px;
+        padding-top: 12px;
+        font-weight: 700;
+        font-size: 18px;
+        color: #1f2937;
+    }
+
+    .warning-text {
+        color: #dc2626;
+        font-weight: 500;
+        margin: 16px 0;
+    }
+
+    .confirmation-buttons {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+        .confirmation-buttons button {
+            flex: 1;
+        }
 
     .icon {
         font-size: 18px;
@@ -626,101 +801,53 @@
 </style>
 
 @code {
-    public class Pedido
-    {
-        public string Id { get; set; }
-        public string NombreCliente { get; set; }
-        public string EmailCliente { get; set; }
-        public string TelefonoCliente { get; set; }
-        public DateTime Fecha { get; set; }
-        public decimal Total { get; set; }
-        public string Estado { get; set; }
-        public List<ItemPedido> Items { get; set; } = new();
-    }
+    private List<PedidoListaDTO> pedidos = new();
+    private PedidoCompletoDTO? pedidoSeleccionado;
+    private PedidoListaDTO? pedidoParaCancelar;
 
-    public class ItemPedido
-    {
-        public string ProductoNombre { get; set; }
-        public int Cantidad { get; set; }
-        public decimal PrecioUnitario { get; set; }
-    }
-
-    private List<Pedido> pedidos = new();
     private string searchTerm = "";
     private string filterStatus = "";
-    private string filterDate = "";
+    private DateTime? filterDate;
+
+    private bool cargando = true;
     private bool mostrarDetalles = false;
-    private Pedido pedidoSeleccionado;
+    private bool mostrarConfirmacion = false;
+    private string? errorMessage;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        CargarPedidosDePrueba();
+        await CargarPedidos();
     }
 
-    private void CargarPedidosDePrueba()
+    private async Task CargarPedidos()
     {
-        pedidos = new List<Pedido>
+        try
         {
-            new Pedido
+            cargando = true;
+            errorMessage = null;
+
+            var response = await PedidoService.ObtenerTodosPedidos();
+
+            if (response.IsSuccess && response.ListObject != null)
             {
-                Id = "#PED-001",
-                NombreCliente = "Juan Pérez",
-                EmailCliente = "juan@example.com",
-                TelefonoCliente = "+57 300 123 4567",
-                Fecha = DateTime.Now.AddDays(-2),
-                Total = 450.00m,
-                Estado = "delivered",
-                Items = new List<ItemPedido>
-                {
-                    new ItemPedido { ProductoNombre = "Laptop HP", Cantidad = 1, PrecioUnitario = 450.00m }
-                }
-            },
-            new Pedido
-            {
-                Id = "#PED-002",
-                NombreCliente = "María García",
-                EmailCliente = "maria@example.com",
-                TelefonoCliente = "+57 310 234 5678",
-                Fecha = DateTime.Now.AddDays(-1),
-                Total = 280.50m,
-                Estado = "shipped",
-                Items = new List<ItemPedido>
-                {
-                    new ItemPedido { ProductoNombre = "Mouse Logitech", Cantidad = 2, PrecioUnitario = 140.25m }
-                }
-            },
-            new Pedido
-            {
-                Id = "#PED-003",
-                NombreCliente = "Carlos López",
-                EmailCliente = "carlos@example.com",
-                TelefonoCliente = "+57 320 345 6789",
-                Fecha = DateTime.Now,
-                Total = 820.00m,
-                Estado = "processing",
-                Items = new List<ItemPedido>
-                {
-                    new ItemPedido { ProductoNombre = "Monitor Samsung 27\"", Cantidad = 1, PrecioUnitario = 820.00m }
-                }
-            },
-            new Pedido
-            {
-                Id = "#PED-004",
-                NombreCliente = "Ana Martínez",
-                EmailCliente = "ana@example.com",
-                TelefonoCliente = "+57 315 456 7890",
-                Fecha = DateTime.Now.AddHours(-5),
-                Total = 195.00m,
-                Estado = "pending",
-                Items = new List<ItemPedido>
-                {
-                    new ItemPedido { ProductoNombre = "Teclado Mecánico", Cantidad = 1, PrecioUnitario = 195.00m }
-                }
+                pedidos = response.ListObject.ToList();
             }
-        };
+            else
+            {
+                errorMessage = response.Message ?? "Error al cargar los pedidos";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+        }
     }
 
-    private IEnumerable<Pedido> PedidosFiltrados
+    private IEnumerable<PedidoListaDTO> PedidosFiltrados
     {
         get
         {
@@ -729,9 +856,9 @@
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 resultado = resultado.Where(p =>
-                    p.Id.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    p.NumeroPedido.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
                     p.NombreCliente.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                    p.EmailCliente.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+                    p.CorreoCliente.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
                 );
             }
 
@@ -740,41 +867,71 @@
                 resultado = resultado.Where(p => p.Estado == filterStatus);
             }
 
-            if (!string.IsNullOrWhiteSpace(filterDate))
+            if (filterDate.HasValue)
             {
-                var fecha = DateTime.Parse(filterDate);
-                resultado = resultado.Where(p => p.Fecha.Date == fecha.Date);
+                resultado = resultado.Where(p => p.FechaPedido.Date == filterDate.Value.Date);
             }
 
-            return resultado.OrderByDescending(p => p.Fecha);
+            return resultado.OrderByDescending(p => p.FechaPedido);
         }
     }
 
-    private void CambiarEstado(Pedido pedido, string nuevoEstado)
+    private async Task CambiarEstado(PedidoListaDTO pedido, string nuevoEstado)
     {
-        var estadoAnterior = pedido.Estado;
-        pedido.Estado = nuevoEstado;
-
-        // Si cambia a "Enviado", generar factura automáticamente
-        if (nuevoEstado == "shipped" && estadoAnterior != "shipped")
+        try
         {
-            GenerarFacturaAutomatica(pedido);
+            var actualizacion = new ActualizarEstadoPedidoDTO
+            {
+                IdPedido = pedido.IdPedido,
+                Estado = nuevoEstado
+            };
+
+            var response = await PedidoService.ActualizarEstadoPedido(actualizacion);
+
+            if (response.IsSuccess)
+            {
+                pedido.Estado = nuevoEstado;
+                StateHasChanged();
+            }
+            else
+            {
+                errorMessage = response.Message;
+                // Revertir el cambio visual
+                await CargarPedidos();
+            }
         }
-
-        StateHasChanged();
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al cambiar estado: {ex.Message}";
+            await CargarPedidos();
+        }
     }
 
-    private void GenerarFacturaAutomatica(Pedido pedido)
+    private async Task VerDetalles(PedidoListaDTO pedido)
     {
-        // Lógica para generar factura electrónica
-        Console.WriteLine($"Generando factura automática para el pedido {pedido.Id}");
-        // Aquí iría la integración con el sistema de facturación
-    }
+        try
+        {
+            cargando = true;
+            var response = await PedidoService.ObtenerPedidoCompleto(pedido.IdPedido);
 
-    private void VerDetalles(Pedido pedido)
-    {
-        pedidoSeleccionado = pedido;
-        mostrarDetalles = true;
+            if (response.IsSuccess && response.Object != null)
+            {
+                pedidoSeleccionado = response.Object;
+                mostrarDetalles = true;
+            }
+            else
+            {
+                errorMessage = response.Message ?? "Error al cargar los detalles del pedido";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+        }
     }
 
     private void CerrarDetalles()
@@ -783,54 +940,50 @@
         pedidoSeleccionado = null;
     }
 
-    private void EditarPedido(Pedido pedido)
+    private void CancelarPedido(PedidoListaDTO pedido)
     {
-        Console.WriteLine($"Editando pedido: {pedido.Id}");
-        // Implementar lógica de edición
+        pedidoParaCancelar = pedido;
+        mostrarConfirmacion = true;
     }
 
-    private void GenerarFactura(Pedido pedido)
+    private void CerrarConfirmacion()
     {
-        Console.WriteLine($"Generando factura para pedido: {pedido.Id}");
-        // Implementar generación manual de factura
+        mostrarConfirmacion = false;
+        pedidoParaCancelar = null;
     }
 
-    private void EliminarPedido(Pedido pedido)
+    private async Task ConfirmarCancelacion()
     {
-        if (confirm($"¿Está seguro de eliminar el pedido {pedido.Id}?"))
+        if (pedidoParaCancelar == null) return;
+
+        try
         {
-            pedidos.Remove(pedido);
-            StateHasChanged();
+            var response = await PedidoService.CancelarPedido(pedidoParaCancelar.IdPedido);
+
+            if (response.IsSuccess)
+            {
+                await CargarPedidos();
+                CerrarConfirmacion();
+            }
+            else
+            {
+                errorMessage = response.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al cancelar pedido: {ex.Message}";
         }
     }
 
-    private void NuevoPedido()
+    private void ExportarPedidos()
     {
-        Console.WriteLine("Crear nuevo pedido");
-        // Implementar formulario de nuevo pedido
+        Console.WriteLine("Exportando pedidos...");
+        // Implementar exportación
     }
 
     private string GetStatusClass(string status)
     {
         return status;
-    }
-
-    private string GetStatusText(string status)
-    {
-        return status switch
-        {
-            "pending" => "Pendiente",
-            "processing" => "En Proceso",
-            "shipped" => "Enviado",
-            "delivered" => "Entregado",
-            "cancelled" => "Cancelado",
-            _ => "Desconocido"
-        };
-    }
-
-    private bool confirm(string message)
-    {
-        // En producción, usar un componente de confirmación modal
-        return true;
     }
 }
