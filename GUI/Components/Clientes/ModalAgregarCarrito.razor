@@ -30,14 +30,12 @@
                 }
                 else if (articuloDetalle != null)
                 {
-                    <!-- Información del producto -->
                     <div class="producto-info">
                         <h4>@articuloDetalle.Nombre</h4>
                         <p class="marca">@articuloDetalle.Marca</p>
                         <p class="precio">@articuloDetalle.PrecioBase.ToString("C")</p>
                     </div>
 
-                    <!-- Selección de talla -->
                     <div class="form-group">
                         <label>Talla</label>
                         <div class="opciones-grid">
@@ -51,7 +49,6 @@
                         </div>
                     </div>
 
-                    <!-- Selección de color -->
                     @if (!string.IsNullOrEmpty(tallaSeleccionada))
                     {
                         <div class="form-group">
@@ -68,7 +65,6 @@
                         </div>
                     }
 
-                    <!-- Stock disponible -->
                     @if (varianteSeleccionada != null)
                     {
                         <div class="stock-info">
@@ -78,7 +74,6 @@
                             <p class="sku">SKU: @varianteSeleccionada.CodigoSKU</p>
                         </div>
 
-                        <!-- Cantidad -->
                         <div class="form-group">
                             <label>Cantidad</label>
                             <div class="cantidad-controls">
@@ -93,7 +88,6 @@
                         </div>
                     }
 
-                    <!-- Mensaje de error -->
                     @if (!string.IsNullOrEmpty(mensajeError))
                     {
                         <div class="error-message">
@@ -101,7 +95,6 @@
                         </div>
                     }
 
-                    <!-- Mensaje de éxito -->
                     @if (mostrarExito)
                     {
                         <div class="success-message">
@@ -132,288 +125,6 @@
     </div>
 }
 
-<style>
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.6);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-        padding: 20px;
-    }
-
-    .modal-content {
-        background: white;
-        border-radius: 16px;
-        max-width: 500px;
-        width: 100%;
-        max-height: 90vh;
-        overflow-y: auto;
-        box-shadow: 0 20px 25px rgba(0, 0, 0, 0.2);
-    }
-
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-        .modal-header h3 {
-            margin: 0;
-            font-size: 20px;
-            font-weight: 700;
-            color: #1f2937;
-        }
-
-    .btn-close {
-        background: none;
-        border: none;
-        font-size: 24px;
-        cursor: pointer;
-        color: #6b7280;
-        padding: 4px 8px;
-        border-radius: 8px;
-        transition: all 0.2s;
-    }
-
-        .btn-close:hover {
-            background: #f3f4f6;
-            color: #1f2937;
-        }
-
-    .modal-body {
-        padding: 20px;
-    }
-
-    .loading {
-        text-align: center;
-        padding: 40px;
-    }
-
-    .spinner {
-        width: 40px;
-        height: 40px;
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #667eea;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin: 0 auto 16px;
-    }
-
-    @@keyframes spin {
-        0% {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
-    }
-
-    .producto-info {
-        margin-bottom: 24px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-        .producto-info h4 {
-            margin: 0 0 8px 0;
-            font-size: 18px;
-            font-weight: 600;
-            color: #1f2937;
-        }
-
-        .producto-info .marca {
-            color: #667eea;
-            font-size: 14px;
-            font-weight: 500;
-            margin: 0 0 8px 0;
-        }
-
-        .producto-info .precio {
-            font-size: 24px;
-            font-weight: 700;
-            color: #2d3748;
-            margin: 0;
-        }
-
-    .form-group {
-        margin-bottom: 20px;
-    }
-
-        .form-group label {
-            display: block;
-            font-size: 14px;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 8px;
-        }
-
-    .opciones-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-        gap: 8px;
-    }
-
-    .opcion-btn {
-        padding: 10px;
-        border: 2px solid #e5e7eb;
-        border-radius: 8px;
-        background: white;
-        color: #374151;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-
-        .opcion-btn:hover {
-            border-color: #667eea;
-            background: #f0f3ff;
-        }
-
-        .opcion-btn.active {
-            border-color: #667eea;
-            background: #667eea;
-            color: white;
-        }
-
-    .stock-info {
-        padding: 12px;
-        background: #f0fdf4;
-        border: 1px solid #bbf7d0;
-        border-radius: 8px;
-        margin-bottom: 20px;
-    }
-
-        .stock-info p {
-            margin: 4px 0;
-            font-size: 14px;
-            color: #166534;
-        }
-
-        .stock-info .sku {
-            font-size: 12px;
-            color: #15803d;
-        }
-
-    .cantidad-controls {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        justify-content: center;
-    }
-
-    .btn-cantidad {
-        width: 36px;
-        height: 36px;
-        border: 2px solid #e5e7eb;
-        border-radius: 8px;
-        background: white;
-        color: #667eea;
-        font-size: 20px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-
-        .btn-cantidad:hover {
-            background: #f0f3ff;
-            border-color: #667eea;
-        }
-
-    .cantidad-input {
-        width: 80px;
-        height: 36px;
-        text-align: center;
-        border: 2px solid #e5e7eb;
-        border-radius: 8px;
-        font-size: 16px;
-        font-weight: 600;
-    }
-
-        .cantidad-input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-    .error-message {
-        padding: 12px;
-        background: #fee2e2;
-        border: 1px solid #fecaca;
-        border-radius: 8px;
-        color: #991b1b;
-        font-size: 14px;
-        margin-top: 16px;
-    }
-
-        .error-message p {
-            margin: 0;
-        }
-
-    .success-message {
-        padding: 12px;
-        background: #d1fae5;
-        border: 1px solid #a7f3d0;
-        border-radius: 8px;
-        color: #065f46;
-        font-size: 14px;
-        margin-top: 16px;
-    }
-
-        .success-message p {
-            margin: 0;
-        }
-
-    .modal-footer {
-        display: flex;
-        gap: 12px;
-        padding: 20px;
-        border-top: 1px solid #e5e7eb;
-    }
-
-    .btn-secondary, .btn-primary {
-        flex: 1;
-        padding: 12px;
-        border-radius: 8px;
-        font-size: 14px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-        border: none;
-    }
-
-    .btn-secondary {
-        background: #f3f4f6;
-        color: #374151;
-    }
-
-        .btn-secondary:hover {
-            background: #e5e7eb;
-        }
-
-    .btn-primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-
-        .btn-primary:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-</style>
 
 @code {
     [Parameter] public int IdArticulo { get; set; }
@@ -455,7 +166,6 @@
             {
                 articuloDetalle = response.Object;
 
-                // Obtener tallas únicas
                 tallasDisponibles = articuloDetalle.Variantes
                     .Where(v => v.Estado == "A" && v.Stock > 0)
                     .Select(v => v.Talla)
@@ -485,7 +195,6 @@
         varianteSeleccionada = null;
         mensajeError = null;
 
-        // Obtener colores disponibles para esta talla
         if (articuloDetalle != null)
         {
             coloresDisponibles = articuloDetalle.Variantes
@@ -502,7 +211,6 @@
         colorSeleccionado = color;
         mensajeError = null;
 
-        // Buscar la variante específica
         if (articuloDetalle != null && !string.IsNullOrEmpty(tallaSeleccionada))
         {
             varianteSeleccionada = articuloDetalle.Variantes
@@ -513,7 +221,6 @@
 
             if (varianteSeleccionada != null)
             {
-                // Ajustar cantidad si excede el stock
                 if (cantidad > varianteSeleccionada.Stock)
                 {
                     cantidad = varianteSeleccionada.Stock;
@@ -573,11 +280,8 @@
             };
 
             Carrito.AgregarItem(item);
-
-            // Mostrar mensaje de éxito
             mostrarExito = true;
 
-            // Cerrar modal después de 1 segundo
             Task.Delay(1000).ContinueWith(_ =>
             {
                 InvokeAsync(async () =>

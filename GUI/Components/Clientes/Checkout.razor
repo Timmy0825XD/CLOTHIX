@@ -2,8 +2,10 @@
 @using ENTITY.Pedidos
 @using ENTITY.Direcciones
 @using ENTITY.Usuarios
+@using GUI.Components.Layout
 @using GUI.Services
 @using BLL.Interfaces
+@layout ClienteLayout
 @inject CarritoService Carrito
 @inject IPedidoService PedidoService
 @inject NavigationManager Navigation
@@ -30,9 +32,7 @@
     else
     {
         <div class="checkout-content">
-            <!-- Formulario de compra -->
             <div class="checkout-form">
-                <!-- Pasos del checkout -->
                 <div class="steps">
                     <div class="step @(pasoActual >= 1 ? "active" : "")">
                         <div class="step-number">1</div>
@@ -50,7 +50,6 @@
                     </div>
                 </div>
 
-                <!-- Paso 1: Dirección de envío -->
                 @if (pasoActual == 1)
                 {
                     <div class="form-section">
@@ -80,7 +79,6 @@
                     </div>
                 }
 
-                <!-- Paso 2: Método de pago -->
                 @if (pasoActual == 2)
                 {
                     <div class="form-section">
@@ -125,13 +123,11 @@
                     </div>
                 }
 
-                <!-- Paso 3: Confirmación -->
                 @if (pasoActual == 3)
                 {
                     <div class="form-section">
                         <h3>Confirmar Pedido</h3>
 
-                        <!-- Resumen de productos -->
                         <div class="confirmacion-productos">
                             <h4>Productos en tu pedido:</h4>
                             @foreach (var item in items)
@@ -149,7 +145,6 @@
                             }
                         </div>
 
-                        <!-- Resumen de envío y pago -->
                         <div class="confirmacion-detalles">
                             <div class="detalle-item">
                                 <strong>Envío:</strong>
@@ -195,7 +190,6 @@
                 }
             </div>
 
-            <!-- Resumen del pedido (siempre visible) -->
             <div class="checkout-resumen">
                 <div class="resumen-card">
                     <h3>Resumen</h3>
@@ -237,494 +231,6 @@
         </div>
     }
 </div>
-
-<style>
-    .checkout-container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-
-    .checkout-header {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        margin-bottom: 30px;
-    }
-
-        .checkout-header h2 {
-            font-size: 32px;
-            font-weight: 700;
-            color: #1f2937;
-            margin: 0;
-        }
-
-    .btn-back {
-        padding: 10px 20px;
-        background: white;
-        border: 2px solid #e5e7eb;
-        border-radius: 8px;
-        color: #667eea;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-
-        .btn-back:hover {
-            background: #f0f3ff;
-            border-color: #667eea;
-        }
-
-    .carrito-vacio {
-        text-align: center;
-        padding: 80px 20px;
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    .empty-icon {
-        font-size: 80px;
-        margin-bottom: 20px;
-    }
-
-    .btn-primary {
-        padding: 12px 32px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-
-    .checkout-content {
-        display: grid;
-        grid-template-columns: 1fr 380px;
-        gap: 30px;
-    }
-
-    .checkout-form {
-        background: white;
-        border-radius: 16px;
-        padding: 30px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    /* Pasos del checkout */
-    .steps {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 40px;
-        padding: 0 20px;
-    }
-
-    .step {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .step-number {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: #e5e7eb;
-        color: #9ca3af;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        transition: all 0.3s;
-    }
-
-    .step.active .step-number {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-
-    .step span {
-        font-size: 14px;
-        color: #6b7280;
-        font-weight: 500;
-    }
-
-    .step.active span {
-        color: #667eea;
-        font-weight: 600;
-    }
-
-    .step-line {
-        flex: 1;
-        height: 2px;
-        background: #e5e7eb;
-        margin: 0 8px;
-        transition: all 0.3s;
-    }
-
-        .step-line.active {
-            background: #667eea;
-        }
-
-    .form-section h3 {
-        font-size: 24px;
-        font-weight: 700;
-        color: #1f2937;
-        margin: 0 0 24px 0;
-    }
-
-    .direccion-card {
-        padding: 20px;
-        border: 2px solid #e5e7eb;
-        border-radius: 12px;
-        margin-bottom: 16px;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-
-        .direccion-card:hover {
-            border-color: #667eea;
-            background: #f0f3ff;
-        }
-
-        .direccion-card.selected {
-            border-color: #667eea;
-            background: #f0f3ff;
-        }
-
-    .direccion-info h4 {
-        margin: 0 0 8px 0;
-        color: #1f2937;
-    }
-
-    .direccion-info p {
-        margin: 4px 0;
-        color: #6b7280;
-        font-size: 14px;
-    }
-
-    .info-note {
-        padding: 12px;
-        background: #f0f9ff;
-        border: 1px solid #bae6fd;
-        border-radius: 8px;
-        margin: 16px 0;
-    }
-
-        .info-note p {
-            margin: 0;
-            font-size: 14px;
-            color: #0c4a6e;
-        }
-
-    .loading-small {
-        text-align: center;
-        padding: 40px;
-    }
-
-    .spinner-small {
-        width: 30px;
-        height: 30px;
-        border: 3px solid #f3f3f3;
-        border-top: 3px solid #667eea;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin: 0 auto 12px;
-    }
-
-    .metodos-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 16px;
-        margin-bottom: 24px;
-    }
-
-    .metodo-card {
-        padding: 20px;
-        border: 2px solid #e5e7eb;
-        border-radius: 12px;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-
-        .metodo-card:hover {
-            border-color: #667eea;
-            background: #f0f3ff;
-        }
-
-        .metodo-card.selected {
-            border-color: #667eea;
-            background: #667eea;
-            color: white;
-        }
-
-    .metodo-icon {
-        font-size: 32px;
-        margin-bottom: 8px;
-    }
-
-    .metodo-nombre {
-        font-size: 14px;
-        font-weight: 500;
-    }
-
-    .confirmacion-productos {
-        margin-bottom: 24px;
-    }
-
-        .confirmacion-productos h4 {
-            font-size: 16px;
-            font-weight: 600;
-            color: #1f2937;
-            margin: 0 0 16px 0;
-        }
-
-    .producto-mini {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px;
-        background: #f9fafb;
-        border-radius: 8px;
-        margin-bottom: 8px;
-    }
-
-    .producto-mini-info {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-        .producto-mini-info strong {
-            color: #1f2937;
-        }
-
-        .producto-mini-info span {
-            font-size: 12px;
-            color: #6b7280;
-        }
-
-    .producto-mini-precio {
-        font-weight: 700;
-        color: #667eea;
-    }
-
-    .confirmacion-detalles {
-        padding: 16px;
-        background: #f9fafb;
-        border-radius: 8px;
-        margin-bottom: 24px;
-    }
-
-    .detalle-item {
-        display: flex;
-        justify-content: space-between;
-        margin: 8px 0;
-        font-size: 14px;
-    }
-
-        .detalle-item strong {
-            color: #1f2937;
-        }
-
-        .detalle-item span {
-            color: #6b7280;
-        }
-
-    .procesando {
-        text-align: center;
-        padding: 40px;
-        background: #f0f9ff;
-        border-radius: 12px;
-        margin: 24px 0;
-    }
-
-    .spinner-large {
-        width: 60px;
-        height: 60px;
-        border: 6px solid #f3f3f3;
-        border-top: 6px solid #667eea;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin: 0 auto 16px;
-    }
-
-    @@keyframes spin {
-        0% {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
-    }
-
-    .procesando p {
-        font-size: 18px;
-        font-weight: 600;
-        color: #1f2937;
-        margin: 8px 0;
-    }
-
-    .procesando-info {
-        font-size: 14px !important;
-        color: #6b7280 !important;
-        font-weight: 400 !important;
-    }
-
-    .error-message {
-        padding: 12px;
-        background: #fee2e2;
-        border: 1px solid #fecaca;
-        border-radius: 8px;
-        color: #991b1b;
-        margin: 16px 0;
-    }
-
-        .error-message p {
-            margin: 0;
-        }
-
-    .form-actions {
-        display: flex;
-        gap: 12px;
-        margin-top: 24px;
-    }
-
-    .btn-back-step {
-        padding: 12px 24px;
-        background: white;
-        border: 2px solid #e5e7eb;
-        border-radius: 8px;
-        color: #374151;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-
-        .btn-back-step:hover:not(:disabled) {
-            background: #f3f4f6;
-        }
-
-        .btn-back-step:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-    .btn-next, .btn-confirmar {
-        flex: 1;
-        padding: 12px 24px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-
-        .btn-next:hover:not(:disabled), .btn-confirmar:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-next:disabled, .btn-confirmar:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-    .btn-confirmar {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    }
-
-        .btn-confirmar:hover:not(:disabled) {
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
-        }
-
-    .checkout-resumen {
-        position: sticky;
-        top: 20px;
-        height: fit-content;
-    }
-
-    .resumen-card {
-        background: white;
-        padding: 24px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-        .resumen-card h3 {
-            font-size: 20px;
-            font-weight: 700;
-            color: #1f2937;
-            margin: 0 0 20px 0;
-        }
-
-    .resumen-linea {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 12px;
-        font-size: 14px;
-        color: #6b7280;
-    }
-
-    .envio-gratis {
-        color: #10b981;
-        font-weight: 600;
-    }
-
-    .resumen-divider {
-        height: 1px;
-        background: #e5e7eb;
-        margin: 16px 0;
-    }
-
-    .resumen-total {
-        display: flex;
-        justify-content: space-between;
-        font-size: 20px;
-        font-weight: 700;
-        color: #1f2937;
-        margin-bottom: 20px;
-    }
-
-    .resumen-productos-lista {
-        padding-top: 16px;
-        border-top: 1px solid #e5e7eb;
-    }
-
-        .resumen-productos-lista h4 {
-            font-size: 14px;
-            font-weight: 600;
-            color: #1f2937;
-            margin: 0 0 12px 0;
-        }
-
-    .producto-resumen {
-        display: flex;
-        justify-content: space-between;
-        font-size: 13px;
-        color: #6b7280;
-        margin: 8px 0;
-    }
-
-    /* Responsive */
-    @@media (max-width: 1024px) {
-        .checkout-content {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
 
 @code {
     private List<CarritoItemDTO> items = new();
@@ -852,10 +358,8 @@
 
             if (response.IsSuccess)
             {
-                // Limpiar el carrito
                 Carrito.Limpiar();
 
-                // Redirigir a página de confirmación
                 Navigation.NavigateTo($"/pedido-confirmado/{response.Object}");
             }
             else

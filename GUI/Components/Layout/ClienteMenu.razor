@@ -1,49 +1,51 @@
-﻿<aside>
+﻿
+<div class="sidebar-header">
     <div class="sidebar-logo">
-        <div class="logo-circle">V</div>
         <div class="logo-text">
-            <div class="logo-title">JOSSAN</div>
-            <div style="color:grey">Admin Panel</div>
+            <span class="logo-title">JOSSAN</span>
+            <span class="logo-subtitle">Tu estilo perfecto</span>
         </div>
     </div>
+</div>
 
-    <nav class="sidebar-nav">
-        <NavLink class="nav-item" href="AdminDashboard">
-            <span style="font-size: 22px">📊</span>
-            <span>Dashboard</span>
-        </NavLink>
+<nav class="sidebar-nav">
+    <NavLink class="nav-item" style="display:flex" href="ClienteCatalogo">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-text">Inicio</span>
+    </NavLink>
+    <NavLink class="nav-item" href="virtual-try-on">
+        <span class="nav-icon">👓</span>
+        <span class="nav-text">Prueba Virtual</span>
+    </NavLink>
+    <NavLink class="nav-item" href="mis-pedidos">
+        <span class="nav-icon">📦</span>
+        <span class="nav-text">Mis Pedidos</span>
+    </NavLink>
+    <NavLink class="nav-item" href="favoritos">
+        <span class="nav-icon">❤️</span>
+        <span class="nav-text">Favoritos</span>
+    </NavLink>
 
-        <NavLink class="nav-item" href="AdminProductos">
-            <span style="font-size: 22px">📦</span>
-            <span>Productos</span>
-        </NavLink>
+    <div class="nav-divider"></div>
 
-        <NavLink class="nav-item" href="AdminPedidos">
-            <span style="font-size: 22px">🛒</span>
-            <span>Pedidos</span>
-        </NavLink>
+    <NavLink class="nav-item" href="asistente">
+        <span class="nav-icon">💬</span>
+        <span class="nav-text">Asistente Virtual</span>
+    </NavLink>
+</nav>
 
-        <NavLink class="nav-item" href="AdminClientes">
-            <span style="font-size: 22px">👥</span>
-            <span>Clientes</span>
-        </NavLink>
-
-        <NavLink class="nav-item" href="AdminFacturas">
-            <span style="font-size: 22px">📈</span>
-            <span>Facturas</span>
-        </NavLink>
-    </nav>
-
-
-    <div class="sidebar-footer">
-        <a href="logout" class="logout-btn">
-            <span>Cerrar Sesión</span>
-        </a>
+<div class="sidebar-footer">
+    <div class="promo-card">
+        <span class="promo-icon">✨</span>
+        <p class="promo-text">¡Descubre nuestra nueva colección!</p>
     </div>
-</aside>
+    <a href="/" class="logout-btn">
+        <span class="logout-icon">🚪</span>
+        <span>Cerrar Sesión</span>
+    </a>
+</div>
 
-<style>
-
+    <style>
     .nav-item {
         display: flex;
         align-items: center;
@@ -61,7 +63,30 @@
         }
 
         .nav-item.active {
-            background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
-</style>
+
+    .nav-icon {
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        transition: transform 0.3s ease;
+    }
+
+    .nav-item:hover .nav-icon {
+        transform: scale(1.15);
+    }
+
+    .nav-text {
+        flex: 1;
+    }
+
+    .nav-divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #e5e7eb, transparent);
+        margin: 12px 0;
+    }
+    </style>

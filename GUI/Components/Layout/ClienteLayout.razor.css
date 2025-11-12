@@ -6,11 +6,16 @@
 .sidebar {
     width: 280px;
     position: fixed;
-    left: 0;
-    top: 0;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
     transition: transform 0.3s ease, opacity 0.3s ease;
     padding: 30px 20px 20px;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+    background: white;
+    z-index: 100;
 }
 
     .sidebar.collapsed {
@@ -35,14 +40,16 @@
 .header {
     background: #ffffff;
     border-bottom: 1px solid #e5e7eb;
-    padding: 20px;
+    padding: 12px 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    gap: 20px;
 }
 
-.header-right {
+/* Header Left */
+.header-left {
     display: flex;
     align-items: center;
     gap: 16px;
@@ -51,36 +58,175 @@
 .btn-toggle {
     width: 40px;
     height: 40px;
+    border: none;
     border-radius: 8px;
-    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 18px;
+    transition: transform 0.2s ease;
+}
+
+    .btn-toggle:hover {
+        transform: scale(1.05);
+    }
+
+.header-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.brand-icon {
+    font-size: 24px;
+}
+
+.brand-text {
+    font-size: 18px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Header Center - Search */
+.header-center {
+    flex: 1;
+    max-width: 600px;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f3f4f6;
+    border-radius: 24px;
+    padding: 10px 20px;
+    transition: all 0.3s ease;
+}
+
+    .search-bar:focus-within {
+        background: white;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+.search-icon {
+    font-size: 18px;
+    color: #9ca3af;
+}
+
+.search-input {
+    border: none;
+    background: transparent;
+    outline: none;
+    flex: 1;
+    font-size: 15px;
+    color: #374151;
+}
+
+    .search-input::placeholder {
+        color: #9ca3af;
+    }
+
+/* Header Right */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.btn-carrito {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 24px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
+}
+
+    .btn-carrito:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+.carrito-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #ef4444;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 7px;
+    border-radius: 10px;
+    min-width: 20px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .user-menu {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 8px 12px;
-    border-radius: 10px;
+    padding: 6px 12px;
+    border-radius: 12px;
+    transition: background-color 0.3s ease;
+    cursor: pointer;
 }
 
+    .user-menu:hover {
+        background-color: #f3f4f6;
+    }
+
 .user-avatar {
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
 .user-name {
     font-size: 14px;
     font-weight: 600;
-    color: black;
+    color: #1f2937;
+}
+
+.user-role {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .header-center {
+        display: none;
+    }
+
+    .brand-text {
+        display: none;
+    }
 }

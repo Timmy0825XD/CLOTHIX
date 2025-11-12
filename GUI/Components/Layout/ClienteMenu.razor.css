@@ -1,56 +1,98 @@
-﻿.sidebar-logo {
+﻿/* Header del Sidebar */
+.sidebar-header {
+    margin-bottom: 50px;
+    margin-top:30px;
+}
+
+.sidebar-logo {
     display: flex;
     align-items: center;
     gap: 15px;
-    margin-bottom: 40px;
-}
-
-.logo-circle {
-    width: 55px;
-    height: 55px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 28px;
-    font-weight: bold;
+    padding: 10px;
 }
 
 .logo-text {
     display: flex;
     flex-direction: column;
+    gap: 2px;
 }
 
 .logo-title {
-    font-size: 24px;
-    font-weight: bold;
-    color: black;
+    font-size: 30px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
+.logo-subtitle {
+    font-size: 12px;
+    color: #9ca3af;
+    font-weight: 500;
+}
+
+/* Navegación */
 .sidebar-nav {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
+    flex: 1;
 }
 
+/* Footer del Sidebar */
 .sidebar-footer {
+    margin-top: auto;
     padding-top: 20px;
     border-top: 1px solid #e5e7eb;
-    margin-top: 250px;
+}
+
+.promo-card {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(251, 191, 36, 0.2);
+    transition: transform 0.3s ease;
+}
+
+    .promo-card:hover {
+        transform: translateY(-2px);
+    }
+
+.promo-icon {
+    font-size: 24px;
+}
+
+.promo-text {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #92400e;
+    line-height: 1.4;
 }
 
 .logout-btn {
     display: flex;
     align-items: center;
-    padding: 14px 20px;
-    color: red;
+    gap: 12px;
+    padding: 13px 18px;
+    color: #dc2626;
     text-decoration: none;
     font-weight: 600;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    font-size: 15px;
 }
 
     .logout-btn:hover {
         background-color: #fee2e2;
-        color: #dc2626;
+        transform: translateX(4px);
     }
+
+.logout-icon {
+    font-size: 20px;
+}

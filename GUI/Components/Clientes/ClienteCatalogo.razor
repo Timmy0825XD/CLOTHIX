@@ -12,13 +12,6 @@
 @layout ClienteLayout
 @implements IDisposable
 
-<!-- Indicador del carrito -->
-<div class="carrito-indicator">
-    <button class="btn-carrito" @onclick="IrAlCarrito">
-        🛒 Carrito (@cantidadCarrito)
-    </button>
-</div>
-
 <section class="catalogo">
     @if (isLoading)
     {
@@ -36,7 +29,7 @@
     }
     else
     {
-        <!-- Filtros / Controles -->
+
         <div class="toolbar">
             <div class="search">
                 <input class="input" type="text" placeholder="Buscar productos..."
@@ -44,7 +37,6 @@
             </div>
 
             <div class="filters">
-                <!-- Filtro por Tipo de Categoría -->
                 <select class="select" @bind="selectedCategoriaTipo">
                     <option value="">Todos los tipos</option>
                     @foreach (var tipo in categoriasTipo)
@@ -53,7 +45,6 @@
                     }
                 </select>
 
-                <!-- Filtro por Ocasión -->
                 <select class="select" @bind="selectedCategoriaOcasion">
                     <option value="">Todas las ocasiones</option>
                     @foreach (var ocasion in categoriasOcasion)
@@ -62,7 +53,6 @@
                     }
                 </select>
 
-                <!-- Filtro por Género -->
                 <select class="select" @bind="selectedGenero">
                     <option value="">Todos los géneros</option>
                     @foreach (var genero in generos)
@@ -71,7 +61,6 @@
                     }
                 </select>
 
-                <!-- Filtro por Marca -->
                 <select class="select" @bind="selectedMarca">
                     <option value="">Todas las marcas</option>
                     @foreach (var marca in marcas)
@@ -80,14 +69,12 @@
                     }
                 </select>
 
-                <!-- Rango de Precio -->
                 <div class="price">
                     <label>Precio máx: <strong>@maxPriceFilter.ToString("C0")</strong></label>
                     <input type="range" min="@minPrice" max="@maxPrice" step="1000"
                            @bind="maxPriceFilter" @bind:event="oninput" />
                 </div>
 
-                <!-- Ordenamiento -->
                 <select class="select" @bind="sortBy">
                     <option value="relevancia">Ordenar: Relevancia</option>
                     <option value="precio_asc">Precio ↑</option>
@@ -99,7 +86,6 @@
             </div>
         </div>
 
-        <!-- Chips de categorías rápidas -->
         <div class="chips">
             <button class="chip @(string.IsNullOrEmpty(selectedCategoriaTipo) ? "active" : "")"
                     @onclick="() => SetCategoriaTipo(string.Empty)">
@@ -114,12 +100,10 @@
             }
         </div>
 
-        <!-- Contador de resultados -->
         <div class="results-info">
             <p>Mostrando @PagedProducts.Count() de @FilteredProducts.Count() productos</p>
         </div>
 
-        <!-- Grid de productos -->
         @if (PagedProducts.Any())
         {
             <div class="grid">
@@ -192,378 +176,16 @@
     }
 </section>
 
-<!-- Modal para agregar al carrito -->
-<ModalAgregarCarrito IdArticulo="idArticuloSeleccionado"
-                     mostrarModal="mostrarModalAgregar"
-                     OnCerrar="CerrarModalAgregar" />
 
-<style>
-    .carrito-indicator {
-        position: fixed;
-        top: 80px;
-        right: 20px;
-        z-index: 999;
-    }
-
-    .btn-carrito {
-        padding: 12px 24px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 50px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-        transition: all 0.3s;
-    }
-
-        .btn-carrito:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
-        }
-
-    .catalogo {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-
-    .toolbar {
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
-    }
-
-    .search {
-        margin-bottom: 15px;
-    }
-
-    .input {
-        width: 100%;
-        padding: 12px 16px;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
-        font-size: 16px;
-        transition: border-color 0.3s;
-    }
-
-        .input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-    .filters {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-    }
-
-    .select {
-        padding: 10px 14px;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
-        font-size: 14px;
-        background: white;
-        cursor: pointer;
-        transition: border-color 0.3s;
-    }
-
-        .select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-    .price {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-
-        .price label {
-            font-size: 14px;
-            color: #333;
-        }
-
-        .price input[type="range"] {
-            width: 100%;
-        }
-
-    .chips {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 20px;
-        overflow-x: auto;
-        padding: 10px 0;
-    }
-
-    .chip {
-        padding: 8px 16px;
-        border: 2px solid #e0e0e0;
-        border-radius: 20px;
-        background: white;
-        cursor: pointer;
-        white-space: nowrap;
-        transition: all 0.3s;
-        font-size: 14px;
-        font-weight: 500;
-    }
-
-        .chip:hover {
-            border-color: #667eea;
-            background: #f0f3ff;
-        }
-
-        .chip.active {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-        }
-
-    .results-info {
-        text-align: center;
-        margin-bottom: 20px;
-        color: #666;
-        font-size: 14px;
-    }
-
-    .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 24px;
-        margin-bottom: 30px;
-    }
-
-    .card {
-        background: white;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        transition: transform 0.3s, box-shadow 0.3s;
-        cursor: pointer;
-    }
-
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-        }
-
-    .img-wrap {
-        position: relative;
-        width: 100%;
-        height: 300px;
-        overflow: hidden;
-        background: #f5f5f5;
-    }
-
-        .img-wrap img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-    .fav {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        width: 40px;
-        height: 40px;
-        border: none;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.9);
-        font-size: 20px;
-        color: #ccc;
-        cursor: pointer;
-        transition: all 0.3s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-        .fav:hover {
-            background: white;
-            transform: scale(1.1);
-        }
-
-        .fav.on {
-            color: #e74c3c;
-        }
-
-    .badge {
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-
-        .badge.new {
-            background: #667eea;
-            color: white;
-        }
-
-        .badge.variants {
-            background: #48bb78;
-            color: white;
-            top: 52px;
-        }
-
-    .info {
-        padding: 16px;
-    }
-
-        .info h3 {
-            margin: 0 0 8px 0;
-            font-size: 18px;
-            font-weight: 600;
-            color: #333;
-        }
-
-    .brand {
-        color: #667eea;
-        font-size: 14px;
-        font-weight: 500;
-        margin: 0 0 8px 0;
-    }
-
-    .tags {
-        display: flex;
-        gap: 6px;
-        margin-bottom: 8px;
-        flex-wrap: wrap;
-    }
-
-    .tag {
-        padding: 4px 10px;
-        background: #f0f3ff;
-        color: #667eea;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 500;
-    }
-
-    .price {
-        font-size: 20px;
-        font-weight: 700;
-        color: #2d3748;
-        margin: 8px 0;
-    }
-
-    .material {
-        font-size: 13px;
-        color: #718096;
-        margin: 4px 0 0 0;
-    }
-
-    .actions {
-        padding: 0 16px 16px 16px;
-    }
-
-    .btn {
-        width: 100%;
-        padding: 12px;
-        border: none;
-        border-radius: 8px;
-        background: #667eea;
-        color: white;
-        font-size: 14px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-
-        .btn:hover:not(:disabled) {
-            background: #5568d3;
-            transform: translateY(-2px);
-        }
-
-        .btn:disabled {
-            background: #cbd5e0;
-            cursor: not-allowed;
-        }
-
-    .pagination {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 20px;
-        padding: 20px;
-    }
-
-    .pg-btn {
-        padding: 8px 16px;
-        border: 2px solid #667eea;
-        border-radius: 8px;
-        background: white;
-        color: #667eea;
-        font-size: 18px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-
-        .pg-btn:hover:not(:disabled) {
-            background: #667eea;
-            color: white;
-        }
-
-        .pg-btn:disabled {
-            border-color: #cbd5e0;
-            color: #cbd5e0;
-            cursor: not-allowed;
-        }
-
-    .loading-container, .error-container, .no-results {
-        text-align: center;
-        padding: 60px 20px;
-        min-height: 400px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 20px;
-    }
-
-    .spinner {
-        width: 50px;
-        height: 50px;
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #667eea;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-
-    @@keyframes spin {
-        0% {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
-    }
-
-    .error-container {
-        color: #e74c3c;
-    }
-
-    .no-results {
-        color: #7f8c8d;
-    }
-</style>
+<ModalAgregarCarrito IdArticulo="idArticuloSeleccionado" mostrarModal="mostrarModalAgregar" OnCerrar="CerrarModalAgregar" />
 
 @code {
-    // ========= Estado =========
+
     private List<ArticuloListaDTO> allProducts = new();
     private HashSet<int> favorites = new();
     private bool isLoading = true;
     private string? errorMessage = null;
 
-    // Filtros
     private string searchText = "";
     private string selectedCategoriaTipo = "";
     private string selectedCategoriaOcasion = "";
@@ -580,15 +202,12 @@
     private List<string> generos = new();
     private List<string> marcas = new();
 
-    // ========= Variables para el carrito =========
     private int cantidadCarrito = 0;
     private bool mostrarModalAgregar = false;
     private int idArticuloSeleccionado = 0;
 
-    // ========= Inicialización =========
     protected override async Task OnInitializedAsync()
     {
-        // Suscribirse a cambios en el carrito
         Carrito.OnChange += ActualizarContadorCarrito;
         ActualizarContadorCarrito();
 
@@ -610,32 +229,11 @@
 
                 if (allProducts.Any())
                 {
-                    // Extraer opciones de filtros únicos
-                    categoriasTipo = allProducts
-                        .Select(p => p.CategoriaTipo)
-                        .Distinct()
-                        .OrderBy(c => c)
-                        .ToList();
+                    categoriasTipo = allProducts.Select(p => p.CategoriaTipo).Distinct().OrderBy(c => c).ToList();
+                    categoriasOcasion = allProducts.Select(p => p.CategoriaOcasion).Distinct().OrderBy(c => c).ToList();
+                    generos = allProducts.Select(p => p.Genero).Distinct().OrderBy(g => g).ToList();
+                    marcas = allProducts.Select(p => p.Marca).Distinct().OrderBy(m => m).ToList();
 
-                    categoriasOcasion = allProducts
-                        .Select(p => p.CategoriaOcasion)
-                        .Distinct()
-                        .OrderBy(c => c)
-                        .ToList();
-
-                    generos = allProducts
-                        .Select(p => p.Genero)
-                        .Distinct()
-                        .OrderBy(g => g)
-                        .ToList();
-
-                    marcas = allProducts
-                        .Select(p => p.Marca)
-                        .Distinct()
-                        .OrderBy(m => m)
-                        .ToList();
-
-                    // Calcular rangos de precio
                     minPrice = allProducts.Min(p => p.PrecioBase);
                     maxPrice = allProducts.Max(p => p.PrecioBase);
                     maxPriceFilter = maxPrice;
@@ -661,7 +259,6 @@
         }
     }
 
-    // ========= Filtrado y Ordenamiento =========
     private IEnumerable<ArticuloListaDTO> FilteredProducts => ApplySort(
         allProducts
             .Where(p => string.IsNullOrWhiteSpace(searchText)
@@ -687,7 +284,7 @@
             "nombre_asc" => seq.OrderBy(p => p.Nombre),
             "nombre_desc" => seq.OrderByDescending(p => p.Nombre),
             "nuevos" => seq.OrderByDescending(p => p.FechaCreacion),
-            _ => seq // relevancia
+            _ => seq
         };
 
     private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredProducts.Count() / (double)pageSize));
@@ -703,25 +300,20 @@
         }
     }
 
-    // ========= Helpers =========
     private string GetImageUrl(ArticuloListaDTO articulo)
     {
         if (!string.IsNullOrEmpty(articulo.ImagenPrincipal))
         {
-            // Si tienes una ruta base para las imágenes
             return articulo.ImagenPrincipal;
         }
-        // Imagen placeholder
         return $"https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=600&h=800&fit=crop&q=80";
     }
 
     private bool IsNewProduct(ArticuloListaDTO articulo)
     {
-        // Considera "nuevo" si fue creado en los últimos 30 días
-        return articulo.FechaCreacion >= DateTime.Now.AddDays(-30);
+        return articulo.FechaCreacion >= DateTime.Now.AddDays(-1);
     }
 
-    // ========= Acciones de Filtrado =========
     private void SetCategoriaTipo(string tipo)
     {
         selectedCategoriaTipo = tipo;
@@ -740,7 +332,6 @@
         currentPage = 1;
     }
 
-    // ========= Acciones de Paginación =========
     private void PrevPage()
     {
         if (currentPage > 1) currentPage--;
@@ -751,7 +342,6 @@
         if (currentPage < TotalPages) currentPage++;
     }
 
-    // ========= Acciones de Producto =========
     private void ToggleFavorite(int productId, MouseEventArgs e)
     {
         if (!favorites.Add(productId))
@@ -766,7 +356,6 @@
         Navigation.NavigateTo($"/cliente/producto/{articulo.IdArticulo}");
     }
 
-    // ========= Métodos del Carrito =========
     private void ActualizarContadorCarrito()
     {
         cantidadCarrito = Carrito.ObtenerCantidadTotal();
@@ -791,7 +380,6 @@
         Navigation.NavigateTo("/carrito");
     }
 
-    // ========= IDisposable =========
     public void Dispose()
     {
         Carrito.OnChange -= ActualizarContadorCarrito;
