@@ -1,0 +1,475 @@
+﻿@using ENTITY.Pedidos
+@using ENTITY.Utilidades
+@using BLL.Interfaces
+
+@if (MostrarModal)
+{
+    <div class="modal-overlay" @onclick="Cerrar">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>🧾 Generar Factura Electrónica</h3>
+                <button class="btn-close" @onclick="Cerrar">✕</button>
+            </div>
+
+            <div class="modal-body">
+                @if (isLoading)
+                {
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Generando factura electrónica...</p>
+                        <p class="loading-detail">Esto puede tomar unos segundos</p>
+                    </div>
+                }
+                else if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="error-box">
+                        <p>❌ @errorMessage</p>
+                    </div>
+                }
+                else if (pedido != null)
+                {
+                    <div class="pedido-info">
+                        <h4>📦 Información del Pedido</h4>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="label">Número de Pedido:</span>
+                                <span class="value">@pedido.NumeroPedido</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Cliente:</span>
+                                <span class="value">@pedido.NombreCliente</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Correo:</span>
+                                <span class="value">@pedido.CorreoCliente</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Total:</span>
+                                <span class="value total">@pedido.Total.ToString("C")</span>
+                            </div>
+                        </div>
+
+                        <h4 class="mt-3">🛍️ Productos (@pedido.Productos.Count)</h4>
+                        <div class="productos-lista">
+                            @foreach (var producto in pedido.Productos)
+                            {
+                                <div class="producto-item">
+                                    <span class="producto-nombre">@producto.NombreProducto</span>
+                                    <span class="producto-detalle">
+                                        @producto.Cantidad x @producto.PrecioUnitario.ToString("C") =
+                                        <strong>@producto.SubtotalLinea.ToString("C")</strong>
+                                    </span>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="totales">
+                            <div class="total-row">
+                                <span>Subtotal:</span>
+                                <span>@pedido.Subtotal.ToString("C")</span>
+                            </div>
+                            <div class="total-row">
+                                <span>Impuesto (IVA 19%):</span>
+                                <span>@pedido.Impuesto.ToString("C")</span>
+                            </div>
+                            <div class="total-row">
+                                <span>Costo de Envío:</span>
+                                <span>@pedido.CostoEnvio.ToString("C")</span>
+                            </div>
+                            <div class="total-row final">
+                                <span><strong>TOTAL:</strong></span>
+                                <span><strong>@pedido.Total.ToString("C")</strong></span>
+                            </div>
+                        </div>
+
+                        <div class="warning-box">
+                            <p>⚠️ <strong>Importante:</strong></p>
+                            <p>Se generará una factura electrónica en Factus y se enviará a la DIAN.</p>
+                            <p>Esta acción no se puede deshacer.</p>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" @onclick="Cerrar" disabled="@isLoading">
+                    Cancelar
+                </button>
+                <button class="btn btn-primary" @onclick="GenerarFactura" disabled="@isLoading">
+                    @if (isLoading)
+                    {
+                        <span>Generando...</span>
+                    }
+                    else
+                    {
+                        <span>✓ Generar Factura</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        animation: slideIn 0.3s ease;
+    }
+
+    @@keyframes slideIn {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .modal-header {
+        padding: 24px;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 24px;
+            color: #333;
+        }
+
+    .btn-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #999;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.3s;
+    }
+
+        .btn-close:hover {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+    .modal-body {
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 40px 20px;
+    }
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .loading-detail {
+        color: #999;
+        font-size: 14px;
+        margin-top: 8px;
+    }
+
+    .error-box {
+        background: #fee;
+        border: 1px solid #fcc;
+        border-radius: 8px;
+        padding: 16px;
+        color: #c33;
+    }
+
+    .pedido-info h4 {
+        margin: 0 0 16px 0;
+        color: #333;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .label {
+        font-size: 12px;
+        color: #999;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+
+    .value {
+        font-size: 15px;
+        color: #333;
+    }
+
+        .value.total {
+            font-size: 18px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+    .mt-3 {
+        margin-top: 24px !important;
+    }
+
+    .produtos-lista {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 16px;
+    }
+
+    .produto-item {
+        padding: 12px;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+        .produto-item:last-child {
+            border-bottom: none;
+        }
+
+    .produto-nome {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .produto-detalle {
+        font-size: 14px;
+        color: #666;
+    }
+
+    .totales {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+
+    .total-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        color: #666;
+    }
+
+        .total-row.final {
+            border-top: 2px solid #333;
+            margin-top: 8px;
+            padding-top: 12px;
+            font-size: 18px;
+            color: #333;
+        }
+
+    .warning-box {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 8px;
+        padding: 16px;
+        margin-top: 16px;
+    }
+
+        .warning-box p {
+            margin: 4px 0;
+            font-size: 14px;
+            color: #856404;
+        }
+
+            .warning-box p:first-child {
+                font-weight: 600;
+            }
+
+    .modal-footer {
+        padding: 20px 24px;
+        border-top: 1px solid #e0e0e0;
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
+    .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+    .btn-secondary {
+        background: #f0f0f0;
+        color: #666;
+    }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #e0e0e0;
+        }
+
+    .btn-primary {
+        background: #667eea;
+        color: white;
+    }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+</style>
+
+@code {
+    [Parameter] public int IdPedido { get; set; }
+    [Parameter] public bool MostrarModal { get; set; }
+    [Parameter] public EventCallback OnCerrar { get; set; }
+    [Parameter] public EventCallback<int> OnFacturaGenerada { get; set; }
+
+    [Inject] private IFacturaService FacturaService { get; set; } = default!;
+    [Inject] private IPedidoService PedidoService { get; set; } = default!;
+
+    private PedidoCompletoDTO? pedido;
+    private bool isLoading = false;
+    private string? errorMessage = null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (MostrarModal && IdPedido > 0)
+        {
+            await CargarPedido();
+        }
+    }
+
+    private async Task CargarPedido()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+
+            var response = await PedidoService.ObtenerPedidoCompleto(IdPedido);
+
+            if (response.IsSuccess && response.Object != null)
+            {
+                pedido = response.Object;
+            }
+            else
+            {
+                errorMessage = response.Message ?? "No se pudo cargar el pedido";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al cargar pedido: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task GenerarFactura()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+
+            var response = await FacturaService.GenerarFacturaElectronica(IdPedido);
+
+            if (response.IsSuccess)
+            {
+                // Notificar éxito
+                await OnFacturaGenerada.InvokeAsync(response.Object);
+                await Cerrar();
+            }
+            else
+            {
+                errorMessage = response.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al generar factura: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task Cerrar()
+    {
+        MostrarModal = false;
+        pedido = null;
+        errorMessage = null;
+        await OnCerrar.InvokeAsync();
+    }
+}

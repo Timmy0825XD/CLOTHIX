@@ -193,6 +193,9 @@ namespace DAL.Implementaciones
         // ========================================
         // 3. OBTENER PEDIDO COMPLETO
         // ========================================
+        // ========================================
+        // 3. OBTENER PEDIDO COMPLETO
+        // ========================================
         public async Task<Response<PedidoCompletoDTO>> ObtenerPedidoCompleto(int idPedido)
         {
             try
@@ -227,6 +230,7 @@ namespace DAL.Implementaciones
                                 {
                                     IdPedido = reader.GetInt32(reader.GetOrdinal("ID_PEDIDO")),
                                     NumeroPedido = reader.GetString(reader.GetOrdinal("NUMERO_PEDIDO")),
+                                    IdUsuario = reader.GetInt32(reader.GetOrdinal("ID_USUARIO")), // ✅ LÍNEA AGREGADA
                                     FechaPedido = reader.GetDateTime(reader.GetOrdinal("FECHA_PEDIDO")),
                                     Estado = reader.GetString(reader.GetOrdinal("ESTADO")),
                                     Subtotal = reader.GetDecimal(reader.GetOrdinal("SUBTOTAL")),

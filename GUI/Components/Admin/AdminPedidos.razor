@@ -2,6 +2,8 @@
 @using System.Collections.Generic
 @using ENTITY.Pedidos
 @using BLL.Interfaces
+@using GUI.Components.Admin
+@inject IFacturaService FacturaService
 @inject IPedidoService PedidoService
 @inject NavigationManager Navigation
 
@@ -90,6 +92,11 @@
                                     <div class="action-buttons">
                                         <button class="btn-action btn-view" @onclick="() => VerDetalles(pedido)" title="Ver Detalles">
                                             <span>👁️</span>
+                                        </button>
+                                        <button class="btn btn-factura"
+                                                @onclick="() => AbrirModalFactura(pedido.IdPedido)"
+                                                disabled="@(pedido.Estado == "Cancelado")">
+                                            🧾 Generar Factura
                                         </button>
                                         <button class="btn-action btn-delete" @onclick="() => CancelarPedido(pedido)" title="Cancelar">
                                             <span>🗑️</span>
@@ -243,6 +250,12 @@
         </div>
     }
 </div>
+
+<!-- Modal para Generar Factura -->
+<ModalGenerarFactura IdPedido="idPedidoSeleccionado"
+                     MostrarModal="mostrarModalFactura"
+                     OnCerrar="CerrarModalFactura"
+                     OnFacturaGenerada="OnFacturaGenerada" />
 
 <style>
     .container {
@@ -798,6 +811,30 @@
     .icon {
         font-size: 18px;
     }
+
+
+
+    .btn-factura {
+        padding: 8px 16px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+        .btn-factura:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-factura:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
 </style>
 
 @code {
@@ -813,6 +850,10 @@
     private bool mostrarDetalles = false;
     private bool mostrarConfirmacion = false;
     private string? errorMessage;
+
+    // Variables para el modal de factura
+    private bool mostrarModalFactura = false;
+    private int idPedidoSeleccionado = 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -985,5 +1026,29 @@
     private string GetStatusClass(string status)
     {
         return status;
+    }
+
+
+    private void AbrirModalFactura(int idPedido)
+    {
+        idPedidoSeleccionado = idPedido;
+        mostrarModalFactura = true;
+    }
+
+    private void CerrarModalFactura()
+    {
+        mostrarModalFactura = false;
+        idPedidoSeleccionado = 0;
+    }
+
+    private async Task OnFacturaGenerada(int idFactura)
+    {
+        // Mostrar notificación de éxito
+        
+
+        // Recargar la lista de pedidos
+        await CargarPedidos();
+
+        StateHasChanged();
     }
 }

@@ -66,6 +66,12 @@ namespace BLL.Implementaciones
 
                 var pedido = pedidoResponse.Object;
 
+                // ✅ NUEVO: Validar que el IdUsuario existe y es válido
+                if (pedido.IdUsuario <= 0)
+                {
+                    return Response<int>.Fail($"El pedido no tiene un usuario válido asociado (IdUsuario: {pedido.IdUsuario})");
+                }
+
                 // 3. Obtener token de Factus
                 var tokenResponse = await ObtenerTokenFactus();
                 if (!tokenResponse.IsSuccess)
@@ -90,7 +96,7 @@ namespace BLL.Implementaciones
                     numeroFactura: factusData.Bill.Number,
                     cufe: factusData.Bill.Cufe,
                     codigoQr: factusData.Bill.Qr,
-                    estadoDian: "Aprobada", // Factus valida automáticamente
+                    estadoDian: "Aprobada",
                     fechaDian: DateTime.Now
                 );
 
