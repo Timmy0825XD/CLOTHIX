@@ -272,18 +272,4 @@ namespace DAL.Implementaciones
             }
         }
     }
-
-    // DTO auxiliar para mapear el resultado del listar_usuarios_activos
-    internal class UsuarioListaDTO
-    {
-        public int IdUsuario { get; set; }
-        public string PrimerNombre { get; set; }
-        public string ApellidoPaterno { get; set; }
-        public string Correo { get; set; }
-        public string TelefonoPrincipal { get; set; }
-        public DateTime FechaRegistro { get; set; }
-        public string DireccionCompleta { get; set; }
-        public string Ciudad { get; set; }
-        public string Rol { get; set; }
-    }
 }
