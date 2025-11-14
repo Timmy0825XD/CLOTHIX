@@ -1,9 +1,11 @@
 ﻿@page "/AdminProductos"
+@using CloudinaryDotNet
 @using ENTITY.Articulos
 @using BLL.Interfaces
 @using ENTITY.Utilidades
 @inject IArticuloServices ArticuloService
 @inject ICategoriaServices CategoriaService
+@inject Cloudinary cloudinary
 
 <div class="container">
     <div class="page-header">
@@ -390,9 +392,33 @@
                             <div class="image-upload-area">
                                 <div class="upload-box">
                                     <span class="upload-icon">📸</span>
-                                    <p>Arrastra imágenes aquí o haz clic para seleccionar</p>
-                                    <button type="button" class="btn-upload" @onclick="SeleccionarImagenes">
-                                        Seleccionar Imágenes
+                                    <p>Sube imágenes desde tu computadora</p>
+
+                                    <label class="btn-upload" style="cursor:pointer; display: inline-block; margin-top: 10px;">
+                                        Seleccionar Imagen
+                                        <InputFile OnChange="OnFileSelectedModal" accept="image/*" style="display:none" />
+                                    </label>
+
+                                    @if (file != null)
+                                    {
+                                        <p style="margin-top: 10px; color: #059669; font-size: 14px;">
+                                            ✓ Imagen seleccionada: <strong>@file.Name</strong>
+                                        </p>
+                                    }
+
+                                    <button type="button"
+                                            class="btn-upload"
+                                            @onclick="SubirImagenACloudinary"
+                                            disabled="@(!hayImagenSeleccionada || subiendoImagen)"
+                                            style="margin-top: 10px; background-color: #059669;">
+                                        @if (subiendoImagen)
+                                        {
+                                            <span>⏳ Subiendo...</span>
+                                        }
+                                        else
+                                        {
+                                            <span>📤 Subir imagen</span>
+                                        }
                                     </button>
                                 </div>
                             </div>
@@ -495,6 +521,11 @@
 
     private int? idProductoAEliminar = null;
     private string nombreProductoAEliminar = "";
+
+    // Variables para manejo de imágenes con Cloudinary
+    private IBrowserFile? file;
+    private bool hayImagenSeleccionada => file != null;
+    private bool subiendoImagen = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -635,6 +666,7 @@
         idProductoEditando = null;
         pasoModal = 1;
         mensajeErrorModal = "";
+        file = null;
         mostrarModal = true;
     }
 
@@ -649,7 +681,6 @@
             {
                 var detalle = resultado.Object;
 
-                // Convertir ArticuloDetalleDTO a ArticuloCreacionDTO
                 nuevoProducto = new ArticuloCreacionDTO
                 {
                     Nombre = detalle.Nombre,
@@ -673,6 +704,7 @@
                 idProductoEditando = id;
                 pasoModal = 1;
                 mensajeErrorModal = "";
+                file = null;
                 mostrarModal = true;
             }
             else
@@ -697,6 +729,8 @@
         nuevoProducto = new();
         idProductoEditando = null;
         mensajeErrorModal = "";
+        file = null;
+        subiendoImagen = false;
     }
 
     private void PasoSiguienteModal()
@@ -740,7 +774,7 @@
 
             if (variantesSinColor.Any())
             {
-                mensajeErrorModal = " Todas las variantes deben tener un color especificado";
+                mensajeErrorModal = "Todas las variantes deben tener un color especificado";
                 return;
             }
 
@@ -751,7 +785,7 @@
 
             if (duplicados.Any())
             {
-                mensajeErrorModal = " Hay variantes duplicadas. Cada combinación talla-color debe ser única";
+                mensajeErrorModal = "Hay variantes duplicadas. Cada combinación talla-color debe ser única";
                 return;
             }
         }
@@ -780,22 +814,74 @@
         nuevoProducto.Variantes.RemoveAt(index);
     }
 
-    private void SeleccionarImagenes()
-    {
-        var urlsImagenes = new[] {
-            "/img/ropa/Camisa1.png",
-            "/img/ropa/Camisa2.png",
-            "/img/ropa/Camisa3.png"
-        };
+    // ========== MÉTODOS PARA MANEJO DE IMÁGENES CON CLOUDINARY ==========
 
-        foreach (var url in urlsImagenes)
+    private void OnFileSelectedModal(InputFileChangeEventArgs e)
+    {
+        file = e.File;
+        Console.WriteLine($"Imagen seleccionada: {file.Name}");
+        StateHasChanged();
+    }
+
+    private async Task SubirImagenACloudinary()
+    {
+        if (file == null)
         {
-            nuevoProducto.Imagenes.Add(new ImagenArticuloDTO
+            mensajeErrorModal = "No hay imagen seleccionada";
+            return;
+        }
+
+        try
+        {
+            subiendoImagen = true;
+            mensajeErrorModal = "";
+
+            // Validar tamaño (máximo 10MB)
+            if (file.Size > 10 * 1024 * 1024)
             {
-                Url = url,
-                Orden = nuevoProducto.Imagenes.Count + 1,
-                EsPrincipal = !nuevoProducto.Imagenes.Any() ? 'S' : 'N'
-            });
+                mensajeErrorModal = "La imagen no puede superar los 10MB";
+                return;
+            }
+
+            using var stream = file.OpenReadStream(10 * 1024 * 1024);
+
+            var uploadParams = new CloudinaryDotNet.Actions.ImageUploadParams
+            {
+                File = new CloudinaryDotNet.FileDescription(file.Name, stream),
+                Folder = "imagenes_productos"
+            };
+
+            var result = await cloudinary.UploadAsync(uploadParams);
+
+            if (result.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                // ✅ Agregar la URL a la lista de imágenes del producto
+                nuevoProducto.Imagenes.Add(new ImagenArticuloDTO
+                {
+                    Url = result.SecureUrl.ToString(),
+                    Orden = nuevoProducto.Imagenes.Count + 1,
+                    EsPrincipal = !nuevoProducto.Imagenes.Any() ? 'S' : 'N'
+                });
+
+                Console.WriteLine($"✓ Imagen subida y agregada: {result.SecureUrl}");
+
+                // Limpiar la selección
+                file = null;
+            }
+            else
+            {
+                mensajeErrorModal = $"Error al subir la imagen: {result.Error?.Message}";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeErrorModal = $"Error al subir imagen: {ex.Message}";
+            Console.WriteLine($"Error completo: {ex}");
+        }
+        finally
+        {
+            subiendoImagen = false;
+            StateHasChanged();
         }
     }
 
@@ -804,25 +890,43 @@
         var imagen = nuevoProducto.Imagenes[index];
         nuevoProducto.Imagenes.RemoveAt(index);
 
+        // Si era la principal y quedan imágenes, hacer la primera como principal
         if (imagen.EsPrincipal == 'S' && nuevoProducto.Imagenes.Any())
         {
             nuevoProducto.Imagenes[0].EsPrincipal = 'S';
+        }
+
+        // Reordenar
+        for (int i = 0; i < nuevoProducto.Imagenes.Count; i++)
+        {
+            nuevoProducto.Imagenes[i].Orden = i + 1;
         }
     }
 
     private void MarcarComoPrincipal(int index)
     {
-        var imagenSeleccionada = nuevoProducto.Imagenes[index];
+        // Marcar todas como no principales
+        foreach (var img in nuevoProducto.Imagenes)
+        {
+            img.EsPrincipal = 'N';
+        }
 
+        // Marcar la seleccionada como principal
+        nuevoProducto.Imagenes[index].EsPrincipal = 'S';
+
+        // Reorganizar: mover la principal al inicio
+        var imagenSeleccionada = nuevoProducto.Imagenes[index];
         nuevoProducto.Imagenes.RemoveAt(index);
         nuevoProducto.Imagenes.Insert(0, imagenSeleccionada);
 
+        // Reordenar todas
         for (int i = 0; i < nuevoProducto.Imagenes.Count; i++)
         {
             nuevoProducto.Imagenes[i].Orden = i + 1;
-            nuevoProducto.Imagenes[i].EsPrincipal = (i == 0) ? 'S' : 'N';
         }
     }
+
+    // ========== FIN MÉTODOS CLOUDINARY ==========
 
     private async Task GuardarProducto()
     {
@@ -873,7 +977,8 @@
 
                 if (resultado.IsSuccess)
                 {
-                    Console.WriteLine($"Producto guardado con ID: {resultado.Object}");
+                    Console.WriteLine($"✓ Producto guardado con ID: {resultado.Object}");
+                    Console.WriteLine($"✓ Con {nuevoProducto.Imagenes.Count} imágenes guardadas en Oracle");
                     await CargarProductos();
                     CerrarModal();
                 }
