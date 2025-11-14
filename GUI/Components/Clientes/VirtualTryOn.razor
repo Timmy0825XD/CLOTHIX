@@ -1,0 +1,472 @@
+﻿@page "/virtual-tryon"
+@using static GUI.Services.VirtualTryOnApp
+@inject VirtualTryOnService TryOnService
+@inject NavigationManager Navigation
+
+<PageTitle>Virtual Try-On</PageTitle>
+
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-4">👔 Virtual Try-On</h1>
+            <p class="lead">Prueba prendas virtualmente usando IA</p>
+
+            @if (!isApiHealthy)
+            {
+                <div class="alert alert-danger" role="alert">
+                    <strong>⚠️ API no disponible</strong>
+                    <p class="mb-0">Asegúrate de que el servidor Python esté ejecutándose en http://localhost:8000</p>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-success" role="alert">
+                    ✅ Conectado a la API
+                </div>
+            }
+        </div>
+    </div>
+
+    @* Estadísticas *@
+    @if (stats != null)
+    {
+        <div class="row mb-4">
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">📊 Estadísticas de Hoy</h5>
+                        <div class="row text-center">
+                            <div class="col-3">
+                                <h3 class="text-primary">@stats.Stats.Successful</h3>
+                                <small>Exitosas</small>
+                            </div>
+                            <div class="col-3">
+                                <h3 class="text-success">@stats.Stats.Good_Quality</h3>
+                                <small>Buena Calidad</small>
+                            </div>
+                            <div class="col-3">
+                                <h3 class="text-danger">@stats.Stats.Failed</h3>
+                                <small>Fallidas</small>
+                            </div>
+                            <div class="col-3">
+                                <h3 class="text-info">@stats.Stats.Total</h3>
+                                <small>Total</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="row mb-4">
+        @* Columna: Imagen de Persona *@
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">📷 Imagen de la Persona</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Sube la foto de la persona:</label>
+                        <InputFile OnChange="HandlePersonImageSelected" class="form-control" accept="image/*" />
+                        <small class="form-text text-muted">
+                            Tips: De frente, brazos separados, fondo simple
+                        </small>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(personImagePreview))
+                    {
+                        <div class="text-center">
+                            <img src="@personImagePreview" class="img-fluid rounded" style="max-height: 400px;" alt="Persona" />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted p-5 border rounded">
+                            <p>No hay imagen seleccionada</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* Columna: Imagen de Prenda *@
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">👕 Imagen de la Prenda</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Sube la foto de la prenda:</label>
+                        <InputFile OnChange="HandleGarmentImageSelected" class="form-control" accept="image/*" />
+                        <small class="form-text text-muted">
+                            Tips: Bien extendida, fondo blanco, sin arrugas
+                        </small>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(garmentImagePreview))
+                    {
+                        <div class="text-center">
+                            <img src="@garmentImagePreview" class="img-fluid rounded" style="max-height: 400px;" alt="Prenda" />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted p-5 border rounded">
+                            <p>No hay imagen seleccionada</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Configuración Avanzada *@
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header" @onclick="ToggleAdvancedSettings" style="cursor: pointer;">
+                    <h5 class="mb-0">
+                        ⚙️ Configuración Avanzada
+                        <span class="float-end">@(showAdvancedSettings ? "▼" : "▶")</span>
+                    </h5>
+                </div>
+                @if (showAdvancedSettings)
+                {
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label class="form-label">Pasos de Denoise: @denoiseSteps</label>
+                                <input type="range" class="form-range" min="20" max="40" @bind="denoiseSteps" />
+                                <small class="form-text text-muted">Más pasos = mejor calidad</small>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Seed:</label>
+                                <input type="number" class="form-control" @bind="seed" />
+                                <small class="form-text text-muted">Para reproducibilidad</small>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check mt-4">
+                                    <input type="checkbox" class="form-check-input" id="autoCrop" @bind="autoCrop" />
+                                    <label class="form-check-label" for="autoCrop">
+                                        Auto-crop
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check mt-4">
+                                    <input type="checkbox" class="form-check-input" id="autoMask" @bind="autoMask" />
+                                    <label class="form-check-label" for="autoMask">
+                                        Auto-mask (recomendado)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @* Botón de Procesamiento *@
+    <div class="row mb-4">
+        <div class="col text-center">
+            <button class="btn btn-primary btn-lg"
+                    @onclick="ProcessTryOn"
+                    disabled="@(isProcessing || personImageData == null || garmentImageData == null)">
+                @if (isProcessing)
+                {
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    <span>Procesando... Esto puede tardar 1-2 minutos</span>
+                }
+                else
+                {
+                    <span>✨ Generar Try-On</span>
+                }
+            </button>
+        </div>
+    </div>
+
+    @* Mensajes *@
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <div class="row mb-4">
+            <div class="col">
+                <div class="alert @statusAlertClass" role="alert">
+                    @statusMessage
+                </div>
+            </div>
+        </div>
+    }
+
+    @* Resultado *@
+    @if (!string.IsNullOrEmpty(resultImageUrl))
+    {
+        <div class="row mb-4">
+            <div class="col">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">🎨 Resultado del Try-On</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <img src="@resultImageUrl" class="img-fluid rounded shadow" alt="Resultado" />
+                        <div class="mt-3">
+                            <a href="@resultImageUrl" download="@GetResultFilename()" class="btn btn-success me-2">
+                                💾 Descargar Imagen
+                            </a>
+                            <button class="btn btn-secondary" @onclick="ClearResult">
+                                🔄 Nueva Prueba
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* Tips y Consejos *@
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header" @onclick="ToggleTips" style="cursor: pointer;">
+                    <h5 class="mb-0">
+                        💡 Consejos para Mejores Resultados
+                        <span class="float-end">@(showTips ? "▼" : "▶")</span>
+                    </h5>
+                </div>
+                @if (showTips)
+                {
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-primary">📸 Foto de la Persona</h6>
+                                <ul>
+                                    <li>✅ De frente, mirando a la cámara</li>
+                                    <li>✅ Brazos ligeramente separados</li>
+                                    <li>✅ Ropa simple y ajustada</li>
+                                    <li>✅ Fondo sólido (blanco/gris)</li>
+                                    <li>❌ Evitar ángulos laterales</li>
+                                    <li>❌ Evitar ropa muy holgada</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-success">👕 Foto de la Prenda</h6>
+                                <ul>
+                                    <li>✅ Prenda plana y extendida</li>
+                                    <li>✅ Fondo blanco o transparente</li>
+                                    <li>✅ Sin arrugas ni dobleces</li>
+                                    <li>✅ Bien iluminada</li>
+                                    <li>❌ Evitar sombras fuertes</li>
+                                    <li>❌ Evitar múltiples prendas</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // Estado de la API
+    private bool isApiHealthy = false;
+    private TryOnStats? stats = null;
+
+    // Imágenes
+    private byte[]? personImageData = null;
+    private string? personFileName = null;
+    private string? personImagePreview = null;
+
+    private byte[]? garmentImageData = null;
+    private string? garmentFileName = null;
+    private string? garmentImagePreview = null;
+
+    // Resultado
+    private string? resultImageUrl = null;
+
+    // Estado del procesamiento
+    private bool isProcessing = false;
+    private string? statusMessage = null;
+    private string statusAlertClass = "alert-info";
+
+    // Configuración avanzada
+    private bool showAdvancedSettings = false;
+    private int denoiseSteps = 30;
+    private int seed = 42;
+    private bool autoCrop = false;
+    private bool autoMask = true;
+
+    // Tips
+    private bool showTips = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckApiHealth();
+        await LoadStats();
+    }
+
+    private async Task CheckApiHealth()
+    {
+        isApiHealthy = await TryOnService.IsApiHealthyAsync();
+    }
+
+    private async Task LoadStats()
+    {
+        try
+        {
+            stats = await TryOnService.GetStatsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cargando estadísticas: {ex.Message}");
+        }
+    }
+
+    private async Task HandlePersonImageSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+
+        if (file != null)
+        {
+            // Validar tamaño (máx 10MB)
+            if (file.Size > 10 * 1024 * 1024)
+            {
+                statusMessage = "⚠️ La imagen es muy grande. Máximo 10MB.";
+                statusAlertClass = "alert-warning";
+                return;
+            }
+
+            try
+            {
+                // Leer datos
+                using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                personImageData = memoryStream.ToArray();
+                personFileName = file.Name;
+
+                // Crear preview
+                personImagePreview = $"data:{file.ContentType};base64,{Convert.ToBase64String(personImageData)}";
+
+                statusMessage = "✅ Imagen de persona cargada correctamente";
+                statusAlertClass = "alert-success";
+            }
+            catch (Exception ex)
+            {
+                statusMessage = $"❌ Error cargando imagen: {ex.Message}";
+                statusAlertClass = "alert-danger";
+            }
+        }
+    }
+
+    private async Task HandleGarmentImageSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+
+        if (file != null)
+        {
+            // Validar tamaño (máx 10MB)
+            if (file.Size > 10 * 1024 * 1024)
+            {
+                statusMessage = "⚠️ La imagen es muy grande. Máximo 10MB.";
+                statusAlertClass = "alert-warning";
+                return;
+            }
+
+            try
+            {
+                // Leer datos
+                using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                garmentImageData = memoryStream.ToArray();
+                garmentFileName = file.Name;
+
+                // Crear preview
+                garmentImagePreview = $"data:{file.ContentType};base64,{Convert.ToBase64String(garmentImageData)}";
+
+                statusMessage = "✅ Imagen de prenda cargada correctamente";
+                statusAlertClass = "alert-success";
+            }
+            catch (Exception ex)
+            {
+                statusMessage = $"❌ Error cargando imagen: {ex.Message}";
+                statusAlertClass = "alert-danger";
+            }
+        }
+    }
+
+    private async Task ProcessTryOn()
+    {
+        if (personImageData == null || garmentImageData == null)
+        {
+            statusMessage = "⚠️ Por favor sube ambas imágenes primero";
+            statusAlertClass = "alert-warning";
+            return;
+        }
+
+        isProcessing = true;
+        statusMessage = "🔄 Procesando... Esto puede tardar 1-2 minutos. Por favor espera.";
+        statusAlertClass = "alert-info";
+        resultImageUrl = null;
+
+        try
+        {
+            using var personStream = new MemoryStream(personImageData);
+            using var garmentStream = new MemoryStream(garmentImageData);
+
+            var resultBytes = await TryOnService.ProcessTryOnAsync(
+                personStream,
+                personFileName ?? "person.jpg",
+                garmentStream,
+                garmentFileName ?? "garment.jpg",
+                denoiseSteps,
+                seed,
+                autoCrop,
+                autoMask
+            );
+
+            // Convertir resultado a base64 para mostrar
+            resultImageUrl = $"data:image/jpeg;base64,{Convert.ToBase64String(resultBytes)}";
+
+            statusMessage = "✅ ¡Try-On completado exitosamente!";
+            statusAlertClass = "alert-success";
+
+            // Recargar estadísticas
+            await LoadStats();
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"❌ Error: {ex.Message}";
+            statusAlertClass = "alert-danger";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private void ClearResult()
+    {
+        resultImageUrl = null;
+        statusMessage = null;
+    }
+
+    private string GetResultFilename()
+    {
+        return $"tryon_result_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
+    }
+
+    private void ToggleAdvancedSettings()
+    {
+        showAdvancedSettings = !showAdvancedSettings;
+    }
+
+    private void ToggleTips()
+    {
+        showTips = !showTips;
+    }
+}

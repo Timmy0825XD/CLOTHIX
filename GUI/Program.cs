@@ -3,12 +3,13 @@ using Blazorise.Bootstrap5;
 using Blazorise.Icons.FontAwesome;
 using BLL.Implementaciones;
 using BLL.Interfaces;
+using CloudinaryDotNet;
 using DAL.Implementaciones;
 using DAL.Interfaces;
 using GUI.Components;
 using GUI.Services;
 using Oracle.ManagedDataAccess.Client;
-using CloudinaryDotNet;
+using static GUI.Services.VirtualTryOnApp;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,7 +41,6 @@ builder.Services.AddScoped<ICategoriaDAO>(sp => new CategoriaDAO(connectionStrin
 builder.Services.AddScoped<IDireccionDAO>(sp => new DireccionDAO(connectionString));
 builder.Services.AddScoped<IPedidoDAO>(sp => new PedidoDAO(connectionString));
 
-
 // ===== REGISTRAR SERVICIOS DE LA CAPA BLL =====
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<IRolService, RolService>();
@@ -49,33 +49,32 @@ builder.Services.AddScoped<ICategoriaServices, CategoriaServices>();
 builder.Services.AddScoped<IDireccionService, DireccionService>();
 builder.Services.AddScoped<IPedidoService, PedidoService>();
 
-
+// ===== SERVICIOS AUXILIARES =====
 builder.Services.AddScoped<SesionService>();
 builder.Services.AddScoped<CarritoService>();
-
-builder.Services.AddHttpClient<IFacturaService, FacturaService>();
 
 // Registrar DAOs y Services de Facturación
 builder.Services.AddScoped<IFacturaDAO>(provider =>
     new FacturaDAO(builder.Configuration.GetConnectionString("OracleConnection")));
-
 builder.Services.AddScoped<IFacturaService, FacturaService>();
 
+// ===== VIRTUAL TRY-ON SERVICE =====
+// IMPORTANTE: Registrar HttpClient con VirtualTryOnService
+builder.Services.AddHttpClient<VirtualTryOnService>(client =>
+{
+    client.BaseAddress = new Uri("http://localhost:8000");
+    client.Timeout = TimeSpan.FromMinutes(5); // Try-on puede tardar
+});
 
-
-///agregado desde aqui
+// ===== CLOUDINARY CONFIGURATION =====
 var cloudinaryUrl = builder.Configuration["Cloudinary:URL"]!;
 var uri = new Uri(cloudinaryUrl.Replace("cloudinary://", "http://"));
 var userInfo = uri.UserInfo.Split(':');
 var cloudName = uri.Host;
 var apiKey = userInfo[0];
 var apiSecret = userInfo[1];
-
 var account = new Account(cloudName, apiKey, apiSecret);
 builder.Services.AddSingleton(new Cloudinary(account));
-/// hasta aca
-
-
 
 var app = builder.Build();
 
@@ -88,10 +87,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-
 app.UseAntiforgery();
-
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
