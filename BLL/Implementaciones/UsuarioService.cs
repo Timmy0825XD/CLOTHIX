@@ -150,5 +150,14 @@ namespace BLL.Implementaciones
                 return false;
             }
         }
+        public async Task<Response<UsuarioConDireccionDTO>> ObtenerUsuarioConDireccion(int idUsuario)
+        {
+            if (idUsuario <= 0)
+            {
+                return Response<UsuarioConDireccionDTO>.Fail("ID de usuario inválido");
+            }
+
+            return await _usuarioDAO.ObtenerUsuarioConDireccion(idUsuario);
+        }
     }
 }

@@ -1,4 +1,9 @@
-﻿<aside>
+﻿@using BLL.Implementaciones
+@using BLL.Interfaces
+@inject IUsuarioService UsuarioService
+@inject NavigationManager Navigation
+
+<aside>
     <div class="sidebar-logo">
         <div class="logo-circle">V</div>
         <div class="logo-text">
@@ -34,12 +39,10 @@
         </NavLink>
     </nav>
 
-
-    <div class="sidebar-footer">
-        <a href="/" class="logout-btn">
+        <button class="logout-btn" @onclick="CerrarSesion">
+            <span class="logout-icon">🚪</span>
             <span>Cerrar Sesión</span>
-        </a>
-    </div>
+        </button>
 </aside>
 
 <style>
@@ -64,3 +67,11 @@
             color: white;
         }
 </style>
+
+@code{
+    private void CerrarSesion()
+    {
+        UsuarioService.CerrarSesion();
+        Navigation.NavigateTo("/", forceLoad: true);
+    }
+}

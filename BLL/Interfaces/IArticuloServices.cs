@@ -1,4 +1,5 @@
 ﻿using ENTITY.Articulos;
+using ENTITY.Usuarios;
 using ENTITY.Utilidades;
 using System;
 using System.Collections.Generic;

@@ -271,5 +271,74 @@ namespace DAL.Implementaciones
                 return Response<bool>.Fail($"Error inesperado: {ex.Message}");
             }
         }
+        public async Task<Response<UsuarioConDireccionDTO>> ObtenerUsuarioConDireccion(int idUsuario)
+        {
+            try
+            {
+                using (var connection = new OracleConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = "pkg_usuarios.obtener_usuario_con_direccion";
+                        command.CommandType = CommandType.StoredProcedure;
+
+                        command.Parameters.Add("p_id_usuario", OracleDbType.Int32).Value = idUsuario;
+
+                        var cursorParam = new OracleParameter("p_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
+                        command.Parameters.Add(cursorParam);
+
+                        await command.ExecuteNonQueryAsync();
+
+                        using (var reader = ((OracleRefCursor)cursorParam.Value).GetDataReader())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                var usuario = new UsuarioConDireccionDTO
+                                {
+                                    IdUsuario = reader.GetInt32(reader.GetOrdinal("ID_USUARIO")),
+                                    IdDireccion = reader.IsDBNull(reader.GetOrdinal("ID_DIRECCION"))
+                                        ? null
+                                        : reader.GetInt32(reader.GetOrdinal("ID_DIRECCION")),
+                                    PrimerNombre = reader.GetString(reader.GetOrdinal("PRIMER_NOMBRE")),
+                                    ApellidoPaterno = reader.GetString(reader.GetOrdinal("APELLIDO_PATERNO")),
+                                    Correo = reader.GetString(reader.GetOrdinal("CORREO")),
+                                    TelefonoPrincipal = reader.GetString(reader.GetOrdinal("TELEFONO_PRINCIPAL")),
+                                    DireccionCompleta = reader.IsDBNull(reader.GetOrdinal("DIRECCION_COMPLETA"))
+                                        ? null
+                                        : reader.GetString(reader.GetOrdinal("DIRECCION_COMPLETA")),
+                                    Barrio = reader.IsDBNull(reader.GetOrdinal("BARRIO"))
+                                        ? null
+                                        : reader.GetString(reader.GetOrdinal("BARRIO")),
+                                    CodigoPostal = reader.IsDBNull(reader.GetOrdinal("CODIGO_POSTAL"))
+                                        ? null
+                                        : reader.GetString(reader.GetOrdinal("CODIGO_POSTAL")),
+                                    CiudadNombre = reader.IsDBNull(reader.GetOrdinal("CIUDAD_NOMBRE"))
+                                        ? null
+                                        : reader.GetString(reader.GetOrdinal("CIUDAD_NOMBRE")),
+                                    Departamento = reader.IsDBNull(reader.GetOrdinal("DEPARTAMENTO"))
+                                        ? null
+                                        : reader.GetString(reader.GetOrdinal("DEPARTAMENTO"))
+                                };
+
+                                return Response<UsuarioConDireccionDTO>.Done(
+                                    "Usuario obtenido exitosamente",
+                                    usuario
+                                );
+                            }
+                            else
+                            {
+                                return Response<UsuarioConDireccionDTO>.Fail("Usuario no encontrado");
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return Response<UsuarioConDireccionDTO>.Fail($"Error al obtener usuario: {ex.Message}");
+            }
+        }
     }
 }

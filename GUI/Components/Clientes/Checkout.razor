@@ -8,6 +8,7 @@
 @layout ClienteLayout
 @inject CarritoService Carrito
 @inject IPedidoService PedidoService
+@inject IUsuarioService UsuarioService
 @inject NavigationManager Navigation
 @inject SesionService Sesion
 
@@ -56,21 +57,43 @@
                     <div class="form-section">
                         <h3>Dirección de Envío</h3>
 
-                        <div class="direccion-card selected">
-                            <div class="direccion-info">
-                                <h4>Dirección Principal</h4>
-                                <p>Calle 123 #45-67</p>
-                                <p>Barrio: Centro</p>
-                                <p>Valledupar, Cesar</p>
+                        @if (cargandoDireccion)
+                        {
+                            <div class="loading-small">
+                                <div class="spinner-small"></div>
+                                <p>Cargando dirección...</p>
                             </div>
-                        </div>
+                        }
+                        else if (usuarioConDireccion != null && usuarioConDireccion.IdDireccion.HasValue)
+                        {
+                            <div class="direccion-card selected">
+                                <div class="direccion-info">
+                                    <h4>Dirección Principal</h4>
+                                    <p>@usuarioConDireccion.DireccionCompleta</p>
+                                    <p>Barrio: @usuarioConDireccion.Barrio</p>
+                                    <p>@usuarioConDireccion.CiudadNombre, @usuarioConDireccion.Departamento</p>
+                                    @if (!string.IsNullOrEmpty(usuarioConDireccion.CodigoPostal))
+                                    {
+                                        <p>Código Postal: @usuarioConDireccion.CodigoPostal</p>
+                                    }
+                                </div>
+                            </div>
 
-                        <div class="info-note">
-                            <p>La dirección de envío se tomará de tu perfil de usuario</p>
-                        </div>
+                            <div class="info-note">
+                                <p>📍 Esta es tu dirección de envío registrada</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="error-message">
+                                <p>⚠️ No tienes una dirección registrada. Por favor, actualiza tu perfil antes de continuar.</p>
+                            </div>
+                        }
 
                         <div class="form-actions">
-                            <button class="btn-next" @onclick="SiguientePaso">
+                            <button class="btn-next"
+                                    @onclick="SiguientePaso"
+                                    disabled="@(!usuarioConDireccion?.IdDireccion.HasValue ?? true)">
                                 Continuar →
                             </button>
                         </div>
@@ -146,7 +169,7 @@
                         <div class="confirmacion-detalles">
                             <div class="detalle-item">
                                 <strong>Envío:</strong>
-                                <span>Dirección Principal</span>
+                                <span>@usuarioConDireccion?.DireccionCompleta</span>
                             </div>
                             <div class="detalle-item">
                                 <strong>Método de pago:</strong>
@@ -241,12 +264,13 @@
     private int pasoActual = 1;
     private int metodoPagoSeleccionado = 0;
     private bool cargandoMetodos = false;
+    private bool cargandoDireccion = false;
     private bool procesandoPedido = false;
     private string? errorMessage;
     private string? mensajeError;
 
     private int idUsuarioAutenticado = 0;
-    private int idDireccion = 1;
+    private UsuarioConDireccionDTO? usuarioConDireccion;
 
     protected override async Task OnInitializedAsync()
     {
@@ -264,7 +288,37 @@
 
         items = Carrito.ObtenerItems();
         ActualizarTotales();
+
+        await CargarDireccionUsuario();
         await CargarMetodosPago();
+    }
+
+    private async Task CargarDireccionUsuario()
+    {
+        try
+        {
+            cargandoDireccion = true;
+
+            var response = await UsuarioService.ObtenerUsuarioConDireccion(idUsuarioAutenticado);
+
+            if (response.IsSuccess && response.Object != null)
+            {
+                usuarioConDireccion = response.Object;
+                Console.WriteLine($"✅ Dirección cargada: {usuarioConDireccion.DireccionCompleta}");
+            }
+            else
+            {
+                Console.WriteLine($"⚠️ No se pudo cargar la dirección: {response.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error al cargar dirección: {ex.Message}");
+        }
+        finally
+        {
+            cargandoDireccion = false;
+        }
     }
 
     private void ActualizarTotales()
@@ -353,13 +407,19 @@
                 return;
             }
 
+            if (!usuarioConDireccion?.IdDireccion.HasValue ?? true)
+            {
+                mensajeError = "Error: No tienes una dirección registrada.";
+                return;
+            }
+
             procesandoPedido = true;
             mensajeError = null;
 
             var pedido = new CrearPedidoDTO
             {
                 IdUsuario = idUsuarioAutenticado,
-                IdDireccionEnvio = idDireccion,
+                IdDireccionEnvio = usuarioConDireccion.IdDireccion.Value,
                 IdMetodoPago = metodoPagoSeleccionado,
                 Productos = items.Select(i => new ProductoPedidoDTO
                 {
@@ -369,6 +429,7 @@
             };
 
             Console.WriteLine($"🛒 Creando pedido para usuario ID: {pedido.IdUsuario}");
+            Console.WriteLine($"📍 Dirección de envío ID: {pedido.IdDireccionEnvio}");
 
             var response = await PedidoService.CrearPedido(pedido);
 

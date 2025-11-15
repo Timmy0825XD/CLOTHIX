@@ -778,16 +778,16 @@
                 return;
             }
 
-            var duplicados = nuevoProducto.Variantes
-                .GroupBy(v => new { v.Talla, v.Color })
-                .Where(g => g.Count() > 1)
-                .ToList();
+            // var duplicados = nuevoProducto.Variantes
+            //     .GroupBy(v => new { v.Talla, v.Color })
+            //     .Where(g => g.Count() > 1)
+            //     .ToList();
 
-            if (duplicados.Any())
-            {
-                mensajeErrorModal = "Hay variantes duplicadas. Cada combinación talla-color debe ser única";
-                return;
-            }
+            // if (duplicados.Any())
+            // {
+            //     mensajeErrorModal = "Hay variantes duplicadas. Cada combinación talla-color debe ser única";
+            //     return;
+            // }
         }
 
         pasoModal++;

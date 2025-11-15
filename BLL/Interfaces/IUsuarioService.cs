@@ -17,5 +17,6 @@ namespace BLL.Interfaces
         Task<Response<bool>> ActualizarUsuario(UsuarioDTO usuario);
         Task<Response<UsuarioDTO>> ObtenerTodosLosUsuarios();
         Task<Response<bool>> EliminarUsuario(int idUsuario);
+        Task<Response<UsuarioConDireccionDTO>> ObtenerUsuarioConDireccion(int idUsuario);
     }
 }
