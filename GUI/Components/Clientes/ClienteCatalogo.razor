@@ -2,6 +2,7 @@
 @page "/ClienteCatalogo"
 @using GUI.Components.Layout
 @using DAL.Interfaces
+@using BLL.Interfaces
 @using ENTITY.Articulos
 @using ENTITY.Utilidades
 @using ENTITY.Pedidos
@@ -9,6 +10,8 @@
 @using GUI.Components.Clientes
 @inject CarritoService Carrito
 @inject IArticuloDAO ArticuloDAO
+@inject IFavoritoService FavoritoService
+@inject SesionService SesionService
 @inject NavigationManager Navigation
 @layout ClienteLayout
 @implements IDisposable
@@ -208,8 +211,8 @@
                         <div class="img-wrap">
                             <img src="@GetImageUrl(articulo)" alt="@articulo.Nombre" loading="lazy" />
 
-                            <button class="fav @(favorites.Contains(articulo.IdArticulo) ? "on" : "")"
-                                    title="Agregar a favoritos"
+                            <button class="fav @(EsFavorito(articulo.IdArticulo) ? "on" : "")"
+                                    title="@(EsFavorito(articulo.IdArticulo) ? "Quitar de favoritos" : "Agregar a favoritos")"
                                     @onclick="(e) => ToggleFavorite(articulo.IdArticulo, e)"
                                     @onclick:stopPropagation="true">
                                 <Icon Name="IconName.Heart" />
@@ -273,11 +276,50 @@
 
 <ModalAgregarCarrito IdArticulo="idArticuloSeleccionado" mostrarModal="mostrarModalAgregar" OnCerrar="CerrarModalAgregar" />
 
+<style>
+    .fav {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: none;
+        background: white;
+        color: #9ca3af;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        z-index: 10;
+    }
+
+    .fav:hover {
+        transform: scale(1.1);
+    }
+
+    .fav.on {
+        background: #ef4444;
+        color: white;
+        animation: heartbeat 0.5s ease;
+    }
+
+    @@keyframes heartbeat {
+        0%, 100% { transform: scale(1); }
+        25% { transform: scale(1.2); }
+        50% { transform: scale(1.1); }
+    }
+</style>
+
 @code {
     private List<ArticuloListaDTO> allProducts = new();
     private HashSet<int> favorites = new();
     private bool isLoading = true;
     private string? errorMessage = null;
+    private int? idUsuarioActual = null;
+    private bool estaLogueado = false;
 
     private string searchText = "";
     private string selectedCategoriaTipo = "";
@@ -306,7 +348,17 @@
         Carrito.OnChange += ActualizarContadorCarrito;
         ActualizarContadorCarrito();
 
+        // Verificar sesión
+        estaLogueado = await SesionService.EstaLogueado();
+        idUsuarioActual = await SesionService.ObtenerIdUsuario();
+
         await LoadProducts();
+        
+        // Si está logueado, cargar favoritos
+        if (estaLogueado && idUsuarioActual.HasValue)
+        {
+            await CargarFavoritos();
+        }
 
         // Auto-avance del carrusel
         carouselTimer = new System.Threading.Timer(_ =>
@@ -361,6 +413,70 @@
         finally
         {
             isLoading = false;
+        }
+    }
+
+    private async Task CargarFavoritos()
+    {
+        if (!idUsuarioActual.HasValue) return;
+
+        try
+        {
+            var response = await FavoritoService.ObtenerFavoritosUsuario(idUsuarioActual.Value);
+            
+            if (response.IsSuccess && response.ListObject != null)
+            {
+                favorites = response.ListObject.Select(f => f.IdArticulo).ToHashSet();
+                Console.WriteLine($"✅ Favoritos cargados en catálogo: {favorites.Count}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error al cargar favoritos: {ex.Message}");
+        }
+    }
+
+    private bool EsFavorito(int idArticulo)
+    {
+        return favorites.Contains(idArticulo);
+    }
+
+    private async Task ToggleFavorite(int idArticulo, MouseEventArgs e)
+    {
+        // Si no está logueado, redirigir al login
+        if (!estaLogueado || !idUsuarioActual.HasValue)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        try
+        {
+            var response = await FavoritoService.ToggleFavorito(idUsuarioActual.Value, idArticulo);
+
+            if (response.IsSuccess && response.Object != null)
+            {
+                if (response.Object.Agregado == 1)
+                {
+                    favorites.Add(idArticulo);
+                    Console.WriteLine($"❤️ Agregado a favoritos: {idArticulo}");
+                }
+                else
+                {
+                    favorites.Remove(idArticulo);
+                    Console.WriteLine($"💔 Quitado de favoritos: {idArticulo}");
+                }
+
+                StateHasChanged();
+            }
+            else
+            {
+                Console.WriteLine($"❌ Error: {response.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Excepción: {ex.Message}");
         }
     }
 
@@ -451,12 +567,6 @@
     private void NextSlide()
     {
         currentSlide = (currentSlide + 1) % 3;
-    }
-
-    private void ToggleFavorite(int productId, MouseEventArgs e)
-    {
-        if (!favorites.Add(productId))
-            favorites.Remove(productId);
     }
 
     private void ActualizarContadorCarrito()
