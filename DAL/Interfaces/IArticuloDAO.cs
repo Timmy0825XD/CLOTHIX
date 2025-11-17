@@ -16,5 +16,10 @@ namespace DAL.Interfaces
         Task<Response<ArticuloListaDTO>> ObtenerArticulosActivos();
         Task<Response<ArticuloDetalleDTO>> ObtenerArticuloPorId(int idArticulo);
         Task<Response<bool>> EliminarArticulo(int idArticulo);
+        Task<Response<bool>> ActualizarVariante(VarianteActualizacionDTO variante);
+        Task<Response<bool>> EliminarVariante(int idVariante);
+        Task<Response<bool>> ActualizarImagen(ImagenActualizacionDTO imagen);
+        Task<Response<bool>> EliminarImagen(int idImagen);
+        Task<Response<bool>> EstablecerImagenPrincipal(int idArticulo, int idImagen);
     }
 }

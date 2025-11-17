@@ -407,5 +407,170 @@ namespace DAL.Implementaciones
                 return Response<bool>.Fail($"Error inesperado: {ex.Message}");
             }
         }
+        public async Task<Response<bool>> ActualizarVariante(VarianteActualizacionDTO variante)
+        {
+            try
+            {
+                using (var connection = new OracleConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    using (var command = new OracleCommand("pkg_articulos.actualizar_variante", connection))
+                    {
+                        command.CommandType = CommandType.StoredProcedure;
+
+                        command.Parameters.Add("p_id_variante", OracleDbType.Int32).Value = variante.IdVariante;
+                        command.Parameters.Add("p_talla", OracleDbType.Varchar2).Value = variante.Talla;
+                        command.Parameters.Add("p_color", OracleDbType.Varchar2).Value = variante.Color;
+                        command.Parameters.Add("p_stock", OracleDbType.Int32).Value = variante.Stock;
+                        command.Parameters.Add("p_estado", OracleDbType.Char).Value = variante.Estado;
+
+                        await command.ExecuteNonQueryAsync();
+
+                        return Response<bool>.Done("Variante actualizada correctamente", true);
+                    }
+                }
+            }
+            catch (OracleException ex)
+            {
+                return Response<bool>.Fail($"Error de base de datos: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return Response<bool>.Fail($"Error inesperado: {ex.Message}");
+            }
+        }
+
+        public async Task<Response<bool>> EliminarVariante(int idVariante)
+        {
+            try
+            {
+                using (var connection = new OracleConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    using (var command = new OracleCommand("pkg_articulos.eliminar_variante", connection))
+                    {
+                        command.CommandType = CommandType.StoredProcedure;
+
+                        command.Parameters.Add("p_id_variante", OracleDbType.Int32).Value = idVariante;
+
+                        await command.ExecuteNonQueryAsync();
+
+                        return Response<bool>.Done("Variante eliminada correctamente", true);
+                    }
+                }
+            }
+            catch (OracleException ex)
+            {
+                if (ex.Message.Contains("pedido(s) activo(s)"))
+                {
+                    return Response<bool>.Fail("No se puede eliminar la variante porque está en pedidos activos");
+                }
+                return Response<bool>.Fail($"Error de base de datos: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return Response<bool>.Fail($"Error inesperado: {ex.Message}");
+            }
+        }
+
+        public async Task<Response<bool>> ActualizarImagen(ImagenActualizacionDTO imagen)
+        {
+            try
+            {
+                using (var connection = new OracleConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    using (var command = new OracleCommand("pkg_articulos.actualizar_imagen", connection))
+                    {
+                        command.CommandType = CommandType.StoredProcedure;
+
+                        command.Parameters.Add("p_id_imagen", OracleDbType.Int32).Value = imagen.IdImagen;
+                        command.Parameters.Add("p_url_imagen", OracleDbType.Varchar2).Value = imagen.Url;
+                        command.Parameters.Add("p_orden", OracleDbType.Int32).Value = imagen.Orden;
+                        command.Parameters.Add("p_es_principal", OracleDbType.Char).Value = imagen.EsPrincipal;
+
+                        await command.ExecuteNonQueryAsync();
+
+                        return Response<bool>.Done("Imagen actualizada correctamente", true);
+                    }
+                }
+            }
+            catch (OracleException ex)
+            {
+                return Response<bool>.Fail($"Error de base de datos: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return Response<bool>.Fail($"Error inesperado: {ex.Message}");
+            }
+        }
+
+        public async Task<Response<bool>> EliminarImagen(int idImagen)
+        {
+            try
+            {
+                using (var connection = new OracleConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    using (var command = new OracleCommand("pkg_articulos.eliminar_imagen", connection))
+                    {
+                        command.CommandType = CommandType.StoredProcedure;
+
+                        command.Parameters.Add("p_id_imagen", OracleDbType.Int32).Value = idImagen;
+
+                        await command.ExecuteNonQueryAsync();
+
+                        return Response<bool>.Done("Imagen eliminada correctamente", true);
+                    }
+                }
+            }
+            catch (OracleException ex)
+            {
+                if (ex.Message.Contains("última imagen"))
+                {
+                    return Response<bool>.Fail("No se puede eliminar la última imagen del artículo");
+                }
+                return Response<bool>.Fail($"Error de base de datos: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return Response<bool>.Fail($"Error inesperado: {ex.Message}");
+            }
+        }
+
+        public async Task<Response<bool>> EstablecerImagenPrincipal(int idArticulo, int idImagen)
+        {
+            try
+            {
+                using (var connection = new OracleConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    using (var command = new OracleCommand("pkg_articulos.establecer_imagen_principal", connection))
+                    {
+                        command.CommandType = CommandType.StoredProcedure;
+
+                        command.Parameters.Add("p_id_articulo", OracleDbType.Int32).Value = idArticulo;
+                        command.Parameters.Add("p_id_imagen", OracleDbType.Int32).Value = idImagen;
+
+                        await command.ExecuteNonQueryAsync();
+
+                        return Response<bool>.Done("Imagen principal establecida correctamente", true);
+                    }
+                }
+            }
+            catch (OracleException ex)
+            {
+                return Response<bool>.Fail($"Error de base de datos: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return Response<bool>.Fail($"Error inesperado: {ex.Message}");
+            }
+        }
     }
 }

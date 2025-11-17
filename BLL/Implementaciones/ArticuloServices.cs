@@ -191,5 +191,138 @@ namespace BLL.Implementaciones
                 return Response<bool>.Fail($"Error en la capa de negocio: {ex.Message}");
             }
         }
+        public async Task<Response<bool>> ActualizarVariante(VarianteActualizacionDTO variante)
+        {
+            try
+            {
+                // Validaciones
+                if (variante.IdVariante == null || variante.IdVariante <= 0)
+                {
+                    return Response<bool>.Fail("ID de variante inválido");
+                }
+
+                if (string.IsNullOrWhiteSpace(variante.Talla))
+                {
+                    return Response<bool>.Fail("La talla es requerida");
+                }
+
+                if (string.IsNullOrWhiteSpace(variante.Color))
+                {
+                    return Response<bool>.Fail("El color es requerido");
+                }
+
+                if (variante.Stock < 0)
+                {
+                    return Response<bool>.Fail("El stock no puede ser negativo");
+                }
+
+                if (variante.Estado != 'A' && variante.Estado != 'I')
+                {
+                    return Response<bool>.Fail("Estado inválido. Use 'A' para activo o 'I' para inactivo");
+                }
+
+                return await _articuloDAO.ActualizarVariante(variante);
+            }
+            catch (Exception ex)
+            {
+                return Response<bool>.Fail($"Error en la capa de negocio: {ex.Message}");
+            }
+        }
+
+        public async Task<Response<bool>> EliminarVariante(int idVariante)
+        {
+            try
+            {
+                if (idVariante <= 0)
+                {
+                    return Response<bool>.Fail("ID de variante inválido");
+                }
+
+                return await _articuloDAO.EliminarVariante(idVariante);
+            }
+            catch (Exception ex)
+            {
+                return Response<bool>.Fail($"Error en la capa de negocio: {ex.Message}");
+            }
+        }
+
+        public async Task<Response<bool>> ActualizarImagen(ImagenActualizacionDTO imagen)
+        {
+            try
+            {
+                // Validaciones
+                if (imagen.IdImagen == null || imagen.IdImagen <= 0)
+                {
+                    return Response<bool>.Fail("ID de imagen inválido");
+                }
+
+                if (string.IsNullOrWhiteSpace(imagen.Url))
+                {
+                    return Response<bool>.Fail("La URL de la imagen es requerida");
+                }
+
+                if (imagen.Orden <= 0)
+                {
+                    return Response<bool>.Fail("El orden debe ser mayor a 0");
+                }
+
+                if (imagen.EsPrincipal != 'S' && imagen.EsPrincipal != 'N')
+                {
+                    return Response<bool>.Fail("EsPrincipal debe ser 'S' o 'N'");
+                }
+
+                // Validar formato URL (opcional pero recomendado)
+                if (!Uri.TryCreate(imagen.Url, UriKind.Absolute, out Uri? uriResult) ||
+                    (uriResult.Scheme != Uri.UriSchemeHttp && uriResult.Scheme != Uri.UriSchemeHttps))
+                {
+                    return Response<bool>.Fail("La URL de la imagen no es válida");
+                }
+
+                return await _articuloDAO.ActualizarImagen(imagen);
+            }
+            catch (Exception ex)
+            {
+                return Response<bool>.Fail($"Error en la capa de negocio: {ex.Message}");
+            }
+        }
+
+        public async Task<Response<bool>> EliminarImagen(int idImagen)
+        {
+            try
+            {
+                if (idImagen <= 0)
+                {
+                    return Response<bool>.Fail("ID de imagen inválido");
+                }
+
+                return await _articuloDAO.EliminarImagen(idImagen);
+            }
+            catch (Exception ex)
+            {
+                return Response<bool>.Fail($"Error en la capa de negocio: {ex.Message}");
+            }
+        }
+
+        public async Task<Response<bool>> EstablecerImagenPrincipal(int idArticulo, int idImagen)
+        {
+            try
+            {
+                if (idArticulo <= 0)
+                {
+                    return Response<bool>.Fail("ID de artículo inválido");
+                }
+
+                if (idImagen <= 0)
+                {
+                    return Response<bool>.Fail("ID de imagen inválido");
+                }
+
+                return await _articuloDAO.EstablecerImagenPrincipal(idArticulo, idImagen);
+            }
+            catch (Exception ex)
+            {
+                return Response<bool>.Fail($"Error en la capa de negocio: {ex.Message}");
+            }
+        }
     }
 }
