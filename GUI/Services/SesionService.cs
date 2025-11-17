@@ -5,13 +5,15 @@ namespace GUI.Services
 {
     public class SesionService
     {
-        private readonly ProtectedLocalStorage _localStorage;
+        // ⚠️ CAMBIO IMPORTANTE: Usar ProtectedSessionStorage en vez de ProtectedLocalStorage
+        private readonly ProtectedSessionStorage _sessionStorage;
         private LoginResponseDTO? _usuarioActual;
         private const string STORAGE_KEY = "usuario_sesion";
 
-        public SesionService(ProtectedLocalStorage localStorage)
+        // ⚠️ CAMBIO: Inyectar ProtectedSessionStorage
+        public SesionService(ProtectedSessionStorage sessionStorage)
         {
-            _localStorage = localStorage;
+            _sessionStorage = sessionStorage;
         }
 
         /// <summary>
@@ -20,28 +22,36 @@ namespace GUI.Services
         public async Task IniciarSesion(LoginResponseDTO usuario)
         {
             _usuarioActual = usuario;
-
-            // Guardar en LocalStorage para persistencia
-            await _localStorage.SetAsync(STORAGE_KEY, usuario);
-
+            // Guardar en SessionStorage (se borra al cerrar navegador/app)
+            await _sessionStorage.SetAsync(STORAGE_KEY, usuario);
             Console.WriteLine($"✅ Sesión iniciada: {usuario.NombreCompleto} (ID: {usuario.IdUsuario})");
         }
 
         /// <summary>
-        /// Cierra la sesión
+        /// Cierra la sesión COMPLETAMENTE - limpia memoria y storage
         /// </summary>
         public async Task CerrarSesion()
         {
-            _usuarioActual = null;
+            try
+            {
+                // 1. Limpiar variable en memoria
+                _usuarioActual = null;
 
-            // Eliminar de LocalStorage
-            await _localStorage.DeleteAsync(STORAGE_KEY);
+                // 2. Eliminar de SessionStorage
+                await _sessionStorage.DeleteAsync(STORAGE_KEY);
 
-            Console.WriteLine("🚪 Sesión cerrada");
+                Console.WriteLine("🚪 Sesión cerrada completamente - Storage limpiado");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error al cerrar sesión: {ex.Message}");
+                // Aún así limpiar la memoria
+                _usuarioActual = null;
+            }
         }
 
         /// <summary>
-        /// Obtiene el usuario actual (con carga desde LocalStorage si es necesario)
+        /// Obtiene el usuario actual (con carga desde SessionStorage si es necesario)
         /// </summary>
         public async Task<LoginResponseDTO?> ObtenerUsuarioActual()
         {
@@ -51,15 +61,19 @@ namespace GUI.Services
                 return _usuarioActual;
             }
 
-            // Intentar cargar desde LocalStorage
+            // Intentar cargar desde SessionStorage
             try
             {
-                var result = await _localStorage.GetAsync<LoginResponseDTO>(STORAGE_KEY);
+                var result = await _sessionStorage.GetAsync<LoginResponseDTO>(STORAGE_KEY);
                 if (result.Success && result.Value != null)
                 {
                     _usuarioActual = result.Value;
-                    Console.WriteLine($"✅ Sesión recuperada desde LocalStorage: {_usuarioActual.NombreCompleto} (ID: {_usuarioActual.IdUsuario})");
+                    Console.WriteLine($"✅ Sesión recuperada desde SessionStorage: {_usuarioActual.NombreCompleto} (ID: {_usuarioActual.IdUsuario})");
                     return _usuarioActual;
+                }
+                else
+                {
+                    Console.WriteLine("ℹ️ No hay sesión guardada - Usuario debe iniciar sesión");
                 }
             }
             catch (Exception ex)
@@ -85,7 +99,9 @@ namespace GUI.Services
         public async Task<bool> EstaLogueado()
         {
             var usuario = await ObtenerUsuarioActual();
-            return usuario != null;
+            bool logueado = usuario != null;
+            Console.WriteLine($"🔍 Verificación de sesión: {(logueado ? "Logueado" : "No logueado")}");
+            return logueado;
         }
 
         /// <summary>

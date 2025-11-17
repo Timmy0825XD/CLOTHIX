@@ -340,5 +340,10 @@ namespace DAL.Implementaciones
                 return Response<UsuarioConDireccionDTO>.Fail($"Error al obtener usuario: {ex.Message}");
             }
         }
+
+        public Task<Response<bool>> CambiarEstadoUsuario(int idUsuario, string nuevoEstado)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

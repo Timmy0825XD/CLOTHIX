@@ -1,6 +1,8 @@
 ﻿@using BLL.Implementaciones
 @using BLL.Interfaces
+@using GUI.Services
 @inject IUsuarioService UsuarioService
+@inject SesionService SesionService
 @inject NavigationManager Navigation
 
 <aside>
@@ -11,42 +13,35 @@
             <div style="color:grey">Admin Panel</div>
         </div>
     </div>
-
     <nav class="sidebar-nav">
         <NavLink class="nav-item" href="AdminDashboard">
-            <span style="font-size: 22px">📊</span>
+            <span style="font-size: 22px"><Icon Name="IconName.Dashboard" /></span>
             <span>Dashboard</span>
         </NavLink>
-
         <NavLink class="nav-item" href="AdminProductos">
-            <span style="font-size: 22px">📦</span>
+            <span style="font-size: 22px"><Icon Name="IconName.Store" /></span>
             <span>Productos</span>
         </NavLink>
-
         <NavLink class="nav-item" href="AdminPedidos">
-            <span style="font-size: 22px">🛒</span>
+            <span style="font-size: 22px"><Icon Name="IconName.ShoppingBasket" /></span>
             <span>Pedidos</span>
         </NavLink>
-
         <NavLink class="nav-item" href="AdminClientes">
-            <span style="font-size: 22px">👥</span>
+            <span style="font-size: 22px"><Icon Name="IconName.User" /></span>
             <span>Clientes</span>
         </NavLink>
-
         <NavLink class="nav-item" href="AdminFacturas">
-            <span style="font-size: 22px">📈</span>
+            <span style="font-size: 22px"><Icon Name="IconName.File" /></span>
             <span>Facturas</span>
         </NavLink>
     </nav>
-
-        <button class="logout-btn" @onclick="CerrarSesion">
-            <span class="logout-icon">🚪</span>
-            <span>Cerrar Sesión</span>
-        </button>
+    <button class="logout-btn" @onclick="CerrarSesion">
+        <span class="logout-icon"><Icon Name="IconName.AngleLeft" /></span>
+        <span>Cerrar Sesión</span>
+    </button>
 </aside>
 
 <style>
-
     .nav-item {
         display: flex;
         align-items: center;
@@ -57,6 +52,7 @@
         text-decoration: none;
         transition: all 0.3s ease;
     }
+
         .nav-item:hover {
             background-color: #f3f4f6;
             transform: translateX(5px);
@@ -68,10 +64,27 @@
         }
 </style>
 
-@code{
-    private void CerrarSesion()
+@code {
+    private async Task CerrarSesion()
     {
-        UsuarioService.CerrarSesion();
-        Navigation.NavigateTo("/", forceLoad: true);
+        try
+        {
+            // 1️⃣ Cerrar sesión en SesionService (limpia ProtectedLocalStorage)
+            await SesionService.CerrarSesion();
+
+            // 2️⃣ Cerrar sesión en UsuarioService (limpia variable estática)
+            UsuarioService.CerrarSesion();
+
+            Console.WriteLine("🚪 Sesión cerrada completamente desde Admin");
+
+            // 3️⃣ Redirigir al inicio con recarga forzada
+            Navigation.NavigateTo("/", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error al cerrar sesión: {ex.Message}");
+            // Aún así redirigir al inicio
+            Navigation.NavigateTo("/", forceLoad: true);
+        }
     }
 }

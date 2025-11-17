@@ -14,7 +14,7 @@ namespace BLL.Implementaciones
     public class UsuarioService : IUsuarioService
     {
         private readonly IUsuarioDAO _usuarioDAO;
-        private static string _usuarioNombreCompleto = null; // null indica no logueado
+        private static string _usuarioNombreCompleto = null;
 
         public UsuarioService(IUsuarioDAO usuarioDAO)
         {
@@ -45,7 +45,7 @@ namespace BLL.Implementaciones
 
         public string ObtenerNombreUsuario()
         {
-            return _usuarioNombreCompleto; // Retorna null si no hay usuario logueado
+            return _usuarioNombreCompleto;
         }
 
         public void CerrarSesion()
@@ -55,7 +55,7 @@ namespace BLL.Implementaciones
 
         public async Task<Response<int>> RegistrarUsuario(UsuarioDTO usuario)
         {
-            var validacion = ValidarDatosUsuario(usuario);
+            var validacion = ValidarDatosUsuario(usuario, true); // NUEVO PARÁMETRO
             if (!validacion.IsSuccess)
             {
                 return Response<int>.Fail(validacion.Message);
@@ -63,7 +63,7 @@ namespace BLL.Implementaciones
 
             if (usuario.RolId == 0)
             {
-                usuario.RolId = 2; // Cliente por defecto
+                usuario.RolId = 2;
             }
 
             return await _usuarioDAO.CrearUsuario(usuario);
@@ -76,7 +76,7 @@ namespace BLL.Implementaciones
                 return Response<bool>.Fail("ID de usuario inválido");
             }
 
-            var validacion = ValidarDatosUsuario(usuario);
+            var validacion = ValidarDatosUsuario(usuario, false); // NO VALIDAR CONTRASEÑA
             if (!validacion.IsSuccess)
             {
                 return Response<bool>.Fail(validacion.Message);
@@ -100,7 +100,8 @@ namespace BLL.Implementaciones
             return await _usuarioDAO.EliminarUsuario(idUsuario);
         }
 
-        private Response<bool> ValidarDatosUsuario(UsuarioDTO usuario)
+        // MÉTODO CORREGIDO CON PARÁMETRO PARA VALIDAR O NO LA CONTRASEÑA
+        private Response<bool> ValidarDatosUsuario(UsuarioDTO usuario, bool validarContrasena = true)
         {
             if (string.IsNullOrWhiteSpace(usuario.Cedula) || usuario.Cedula.Length < 8)
             {
@@ -121,8 +122,9 @@ namespace BLL.Implementaciones
             {
                 return Response<bool>.Fail("El formato del correo es inválido");
             }
-            
-            if (string.IsNullOrWhiteSpace(usuario.Contrasena) || usuario.Contrasena.Length < 6)
+
+            // SOLO VALIDAR CONTRASEÑA SI SE SOLICITA (NUEVO REGISTRO)
+            if (validarContrasena && (string.IsNullOrWhiteSpace(usuario.Contrasena) || usuario.Contrasena.Length < 6))
             {
                 return Response<bool>.Fail("La contraseña debe tener al menos 6 caracteres");
             }
@@ -150,6 +152,7 @@ namespace BLL.Implementaciones
                 return false;
             }
         }
+
         public async Task<Response<UsuarioConDireccionDTO>> ObtenerUsuarioConDireccion(int idUsuario)
         {
             if (idUsuario <= 0)

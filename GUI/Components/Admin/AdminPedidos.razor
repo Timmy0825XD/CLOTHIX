@@ -1,8 +1,11 @@
 ﻿@page "/AdminPedidos"
 @using System.Collections.Generic
+@using ClosedXML.Excel
 @using ENTITY.Pedidos
 @using BLL.Interfaces
 @using GUI.Components.Admin
+@using System.Text
+@inject IJSRuntime JSRuntime
 @inject IFacturaService FacturaService
 @inject IPedidoService PedidoService
 @inject NavigationManager Navigation
@@ -24,7 +27,6 @@
         <div class="content-card">
             <div class="filters-row">
                 <div class="search-box">
-                    <span class="search-icon">🔍</span>
                     <input type="text"
                            placeholder="Buscar pedidos..."
                            class="search-input"
@@ -43,7 +45,7 @@
                     <input type="date" class="filter-date" @bind="filterDate" @bind:format="yyyy-MM-dd" />
                 </div>
                 <button class="btn-secondary" @onclick="ExportarPedidos">
-                    <span class="icon">📥</span>
+                    <span class="icon"><Icon Name="IconName.FileDownload" /></span>
                     Exportar
                 </button>
             </div>
@@ -84,15 +86,15 @@
                                 <td>
                                     <div class="action-buttons">
                                         <button class="btn-action btn-view" @onclick="() => VerDetalles(pedido)" title="Ver Detalles">
-                                            <span>👁️</span>
+                                            <Icon Name="IconName.Eye" />
                                         </button>
                                         <button class="btn btn-factura"
                                                 @onclick="() => AbrirModalFactura(pedido.IdPedido)"
                                                 disabled="@(pedido.Estado == "Cancelado")">
-                                            🧾 Generar Factura
+                                            <Icon Name="IconName.File" /> Generar Factura
                                         </button>
                                         <button class="btn-action btn-delete" @onclick="() => CancelarPedido(pedido)" title="Cancelar">
-                                            <span>🗑️</span>
+                                            <Icon Name="IconName.Delete" />
                                         </button>
                                     </div>
                                 </td>
@@ -428,9 +430,58 @@
         }
     }
 
-    private void ExportarPedidos()
+    private async Task ExportarPedidos()
     {
-        // Implementar exportación
+        try
+        {
+            var pedidosParaExportar = PedidosFiltrados.ToList();
+
+            if (!pedidosParaExportar.Any())
+            {
+                errorMessage = "No hay pedidos para exportar";
+                return;
+            }
+
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Pedidos");
+
+            // Encabezados
+            worksheet.Cell(1, 1).Value = "Número Pedido";
+            worksheet.Cell(1, 2).Value = "Cliente";
+            worksheet.Cell(1, 3).Value = "Email";
+            worksheet.Cell(1, 4).Value = "Fecha";
+            worksheet.Cell(1, 5).Value = "Total";
+            worksheet.Cell(1, 6).Value = "Estado";
+            worksheet.Cell(1, 7).Value = "Método Pago";
+
+            // Datos
+            int row = 2;
+            foreach (var pedido in pedidosParaExportar)
+            {
+                worksheet.Cell(row, 1).Value = pedido.NumeroPedido;
+                worksheet.Cell(row, 2).Value = pedido.NombreCliente;
+                worksheet.Cell(row, 3).Value = pedido.CorreoCliente;
+                worksheet.Cell(row, 4).Value = pedido.FechaPedido.ToString("dd/MM/yyyy HH:mm");
+                worksheet.Cell(row, 5).Value = pedido.Total;
+                worksheet.Cell(row, 6).Value = pedido.Estado;
+                worksheet.Cell(row, 7).Value = pedido.MetodoPago;
+                row++;
+            }
+
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            var bytes = stream.ToArray();
+            var base64 = Convert.ToBase64String(bytes);
+            var fileName = $"pedidos_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, base64);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al exportar: {ex.Message}";
+        }
     }
 
     private string GetStatusClass(string status)
@@ -458,3 +509,4 @@
         StateHasChanged();
     }
 }
+

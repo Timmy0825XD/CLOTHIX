@@ -16,5 +16,6 @@ namespace DAL.Interfaces
         Task<Response<UsuarioDTO>> ObtenerUsuarios();
         Task<Response<bool>> EliminarUsuario(int idUsuario);
         Task<Response<UsuarioConDireccionDTO>> ObtenerUsuarioConDireccion(int idUsuario);
+        Task<Response<bool>> CambiarEstadoUsuario(int idUsuario, string nuevoEstado);
     }
 }

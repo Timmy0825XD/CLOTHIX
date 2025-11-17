@@ -50,18 +50,13 @@
 </nav>
 
 <div class="sidebar-footer">
-    <div class="promo-card">
-        <div class="promo-content">
-            <p class="promo-title">¡Nueva Colección!</p>
-            <p class="promo-text">Descubre las últimas tendencias</p>
-        </div>
-    </div>
 
     @if (EstaLogueado)
     {
-        <button class="logout-btn" @onclick="CerrarSesion">
-            <span>Cerrar Sesión</span>
-        </button>
+    <button class="logout-btn" @onclick="CerrarSesion">
+        <span style="color:white"><Icon Name="IconName.AngleLeft" /></span>
+        <span style="color:white">Cerrar Sesión</span>
+    </button>
     }
     else
     {
@@ -148,19 +143,6 @@
         border-top: 1px solid #e5e7eb;
     }
 
-    .promo-title {
-        color: white;
-        font-weight: 700;
-        font-size: 14px;
-        margin: 0 0 4px 0;
-    }
-
-    .promo-text {
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 12px;
-        margin: 0;
-    }
-
     .logout-btn, .login-btn {
         width: 100%;
         display: flex;
@@ -180,6 +162,10 @@
 
     .login-btn {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .logout-btn {
+        color:white;
     }
 
         .logout-btn:hover, .login-btn:hover {
@@ -410,15 +396,15 @@
     {
         try
         {
-            // Cerrar sesión en SesionService (limpia ProtectedLocalStorage)
+            // 1️⃣ Cerrar sesión en SesionService (limpia ProtectedLocalStorage)
             await SesionService.CerrarSesion();
 
-            // Cerrar sesión en UsuarioService (limpia campo estático)
+            // 2️⃣ Cerrar sesión en UsuarioService (limpia variable estática)
             UsuarioService.CerrarSesion();
 
-            Console.WriteLine("🚪 Sesión cerrada correctamente");
+            Console.WriteLine("🚪 Sesión cerrada completamente desde Cliente");
 
-            // Redirigir al inicio con recarga forzada
+            // 3️⃣ Redirigir al inicio con recarga forzada
             Navigation.NavigateTo("/", forceLoad: true);
         }
         catch (Exception ex)

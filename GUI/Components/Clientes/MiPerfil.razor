@@ -614,12 +614,7 @@
                 }
             }
 
-            // Cargar ciudades - AJUSTADO: accede a .Object en lugar de .ListObject
-            var resultadoCiudades = await DireccionService.ObtenerTodasLasCiudades();
-            if (resultadoCiudades.IsSuccess && resultadoCiudades.ListObject != null)
-            {
-                ciudades = resultadoCiudades.ListObject.ToList();
-            }
+            // Cargar ciudades - CORREGIDO
 
         }
         catch (Exception ex)
@@ -632,7 +627,6 @@
         }
     }
 
-    // NUEVO: Método helper para obtener el nombre completo de la ciudad
     private string ObtenerNombreCiudadCompleto()
     {
         if (direccion == null) return "";
@@ -667,6 +661,15 @@
 
         try
         {
+            // Validación de nueva contraseña (solo si se proporciona)
+            if (!string.IsNullOrWhiteSpace(nuevaContrasena) && nuevaContrasena.Length < 6)
+            {
+                mensajePersonal = "❌ La nueva contraseña debe tener al menos 6 caracteres";
+                mensajePersonalExito = false;
+                guardandoPersonal = false;
+                return;
+            }
+
             // Si hay nueva contraseña, usarla; si no, mantener la original
             var contrasenaFinal = string.IsNullOrWhiteSpace(nuevaContrasena)
                 ? usuarioOriginal.Contrasena
@@ -719,7 +722,7 @@
                 };
 
                 // Ocultar mensaje después de un tiempo
-                await Task.Delay(1500);
+                await Task.Delay(3000);
                 mensajePersonal = "";
             }
             else
@@ -763,6 +766,31 @@
 
         try
         {
+            // Validaciones
+            if (direccionEditar.CiudadId <= 0)
+            {
+                mensajeDireccion = "❌ Debe seleccionar una ciudad";
+                mensajeDireccionExito = false;
+                guardandoDireccion = false;
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(direccionEditar.DireccionCompleta) || direccionEditar.DireccionCompleta.Length < 10)
+            {
+                mensajeDireccion = "❌ La dirección debe tener al menos 10 caracteres";
+                mensajeDireccionExito = false;
+                guardandoDireccion = false;
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(direccionEditar.Barrio) || direccionEditar.Barrio.Length < 3)
+            {
+                mensajeDireccion = "❌ El barrio debe tener al menos 3 caracteres";
+                mensajeDireccionExito = false;
+                guardandoDireccion = false;
+                return;
+            }
+
             if (esNuevaDireccion)
             {
                 // Crear nueva dirección
@@ -784,7 +812,10 @@
                     esNuevaDireccion = false;
 
                     // Actualizar el DireccionId del usuario
-                    usuario.DireccionId = resultado.Object;
+                    usuario!.DireccionId = resultado.Object;
+
+                    // Guardar cambio en el usuario
+                    await UsuarioService.ActualizarUsuario(usuario);
 
                     // Recargar datos
                     await Task.Delay(1500);

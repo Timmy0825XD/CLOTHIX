@@ -5,20 +5,15 @@
 @inject IFacturaService FacturaService
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
+@using ClosedXML.Excel
 
 <div class="container">
     <div class="header-section">
         <h2 class="page-title">Gestión de Facturas Electrónicas</h2>
-        <div class="header-actions">
-            <button class="btn-refresh" @onclick="CargarFacturas" disabled="@cargando">
-                <span class="icon">🔄</span>
-                Actualizar
-            </button>
             <button class="btn-secondary" @onclick="ExportarFacturas">
-                <span class="icon">📥</span>
+            <span class="icon"><Icon Name="IconName.FileDownload" /></span>
                 Exportar
             </button>
-        </div>
     </div>
 
     @if (cargando)
@@ -31,7 +26,7 @@
     else if (!string.IsNullOrEmpty(mensajeError))
     {
         <div class="error-message">
-            <span class="error-icon">⚠️</span>
+            <span class="error-icon"><Icon Name="IconName.Alert" /></span>
             <span>@mensajeError</span>
             <button class="btn-retry" @onclick="CargarFacturas">Reintentar</button>
         </div>
@@ -41,21 +36,21 @@
         <div class="content-card">
             <div class="stats-row">
                 <div class="stat-card stat-total">
-                    <span class="stat-icon">📊</span>
+                    <span class="stat-icon"><Icon Name="IconName.Dashboard" /></span>
                     <div class="stat-info">
                         <span class="stat-label">Total Facturas</span>
                         <span class="stat-value">@facturas.Count</span>
                     </div>
                 </div>
                 <div class="stat-card stat-aprobadas">
-                    <span class="stat-icon">✅</span>
+                    <span class="stat-icon"><Icon Name="IconName.Check" /></span>
                     <div class="stat-info">
                         <span class="stat-label">Aprobadas</span>
                         <span class="stat-value">@facturas.Count(f => f.EstadoDian == "Aprobada")</span>
                     </div>
                 </div>
                 <div class="stat-card stat-pendientes">
-                    <span class="stat-icon">⏳</span>
+                    <span class="stat-icon"><Icon Name="IconName.TimesCircle" /></span>
                     <div class="stat-info">
                         <span class="stat-label">Pendientes</span>
                         <span class="stat-value">@facturas.Count(f => f.EstadoDian != "Aprobada")</span>
@@ -65,7 +60,6 @@
 
             <div class="filters-row">
                 <div class="search-box">
-                    <span class="search-icon">🔍</span>
                     <input type="text"
                            placeholder="Buscar por número, CUFE o pedido..."
                            class="search-input"
@@ -119,7 +113,7 @@
                                                     @(factura.Cufe.Length > 25 ? factura.Cufe.Substring(0, 25) + "..." : factura.Cufe)
                                                 </span>
                                                 <button class="btn-copy-mini" @onclick="() => CopiarCUFE(factura.Cufe)" title="Copiar CUFE">
-                                                    📋
+                                                    
                                                 </button>
                                             </div>
                                         }
@@ -143,7 +137,7 @@
                                                 <button class="btn-action btn-dian"
                                                         @onclick="() => VerEnDIAN(factura.Cufe)"
                                                         title="Ver en DIAN">
-                                                    <span>🏛️</span>
+                                                    <span><Icon Name="IconName.Store" /></span>
                                                 </button>
                                             }
                                             @if (!string.IsNullOrEmpty(factura.Cufe))
@@ -151,7 +145,7 @@
                                                 <button class="btn-action btn-copy"
                                                         @onclick="() => CopiarCUFE(factura.Cufe)"
                                                         title="Copiar CUFE">
-                                                    <span>📋</span>
+                                                    <span><Icon Name="IconName.File" /></span>
                                                 </button>
                                             }
                                         </div>
@@ -188,444 +182,6 @@
 
 <style>
 
-    .header-section {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24px;
-        flex-wrap: wrap;
-    }
-
-    .page-title {
-        font-size: 28px;
-        font-weight: bold;
-        color: #1f2937;
-        margin: 0;
-    }
-
-    .header-actions {
-        display: flex;
-        gap: 12px;
-    }
-
-    .btn-secondary, .btn-refresh {
-        padding: 12px 24px;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        background: white;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: all 0.2s ease;
-        font-size: 14px;
-        font-weight: 500;
-    }
-
-        .btn-secondary:hover, .btn-refresh:hover {
-            background: #f9fafb;
-            transform: translateY(-1px);
-        }
-
-        .btn-refresh:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-    .loading-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 60px 20px;
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .spinner {
-        width: 50px;
-        height: 50px;
-        border: 4px solid #f3f4f6;
-        border-top: 4px solid #a855f7;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-
-    @@keyframes spin {
-        0% {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
-    }
-
-    .error-message {
-        background: #fee2e2;
-        border: 1px solid #fecaca;
-        border-radius: 12px;
-        padding: 20px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        color: #991b1b;
-    }
-
-    .error-icon {
-        font-size: 24px;
-    }
-
-    .btn-retry {
-        margin-left: auto;
-        padding: 8px 16px;
-        background: #dc2626;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-    }
-
-    .stats-row {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 16px;
-        margin-bottom: 24px;
-    }
-
-    .stat-card {
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        border-left: 4px solid;
-    }
-
-    .stat-total {
-        border-color: #a855f7;
-    }
-
-    .stat-aprobadas {
-        border-color: #10b981;
-    }
-
-    .stat-pendientes {
-        border-color: #f59e0b;
-    }
-
-    .stat-icon {
-        font-size: 32px;
-    }
-
-    .stat-info {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .stat-label {
-        font-size: 12px;
-        color: #6b7280;
-        font-weight: 500;
-    }
-
-    .stat-value {
-        font-size: 24px;
-        font-weight: bold;
-        color: #1f2937;
-    }
-
-    .content-card {
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .filters-row {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        margin-bottom: 24px;
-    }
-
-    @@media (min-width: 768px) {
-        .filters-row {
-            flex-direction: row;
-            align-items: center;
-        }
-    }
-
-    .search-box {
-        flex: 1;
-        position: relative;
-    }
-
-    .search-icon {
-        position: absolute;
-        left: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #9ca3af;
-    }
-
-    .search-input {
-        width: 100%;
-        padding: 12px 12px 12px 40px;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        font-size: 14px;
-        transition: all 0.2s ease;
-    }
-
-        .search-input:focus {
-            outline: none;
-            border-color: #a855f7;
-            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
-        }
-
-    .filter-group {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-    }
-
-    .filter-select, .filter-date {
-        padding: 12px 16px;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        font-size: 14px;
-        cursor: pointer;
-    }
-
-    .table-wrapper {
-        overflow-x: auto;
-        margin-bottom: 16px;
-    }
-
-    .data-table {
-        width: 100%;
-        border-collapse: collapse;
-        min-width: 1200px;
-    }
-
-        .data-table thead tr {
-            border-bottom: 2px solid #e5e7eb;
-        }
-
-        .data-table th {
-            text-align: left;
-            padding: 12px;
-            color: #6b7280;
-            font-weight: 600;
-            font-size: 13px;
-            white-space: nowrap;
-        }
-
-    .table-row {
-        border-bottom: 1px solid #e5e7eb;
-        transition: background-color 0.2s ease;
-    }
-
-        .table-row:hover {
-            background-color: #f9fafb;
-        }
-
-        .table-row td {
-            padding: 16px 12px;
-            font-size: 14px;
-        }
-
-    .invoice-id {
-        font-weight: 700;
-        color: #a855f7;
-    }
-
-    .invoice-number {
-        font-weight: 600;
-        color: #1f2937;
-    }
-
-    .invoice-date {
-        color: #6b7280;
-        font-size: 13px;
-    }
-
-    .pedido-id, .user-id {
-        color: #6b7280;
-        font-size: 13px;
-    }
-
-    .cufe-cell {
-        max-width: 200px;
-    }
-
-    .cufe-container {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .cufe-text {
-        font-family: monospace;
-        font-size: 11px;
-        color: #6b7280;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .btn-copy-mini {
-        padding: 4px 8px;
-        border: none;
-        background: #f3f4f6;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 12px;
-        transition: all 0.2s ease;
-        flex-shrink: 0;
-    }
-
-        .btn-copy-mini:hover {
-            background: #e5e7eb;
-        }
-
-    .invoice-amount, .invoice-tax {
-        color: #6b7280;
-        font-weight: 500;
-    }
-
-    .invoice-total {
-        font-weight: 700;
-        color: #1f2937;
-        font-size: 15px;
-    }
-
-    .status-badge {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-    }
-
-        .status-badge.aprobada {
-            background-color: #d1fae5;
-            color: #065f46;
-        }
-
-        .status-badge.rechazada {
-            background-color: #fee2e2;
-            color: #991b1b;
-        }
-
-        .status-badge.pendiente {
-            background-color: #fef3c7;
-            color: #92400e;
-        }
-
-        .status-badge.default {
-            background-color: #f3f4f6;
-            color: #6b7280;
-        }
-
-    .action-buttons {
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-    }
-
-    .btn-action {
-        padding: 8px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        font-size: 16px;
-    }
-
-    .btn-dian {
-        background: #e0e7ff;
-        color: #4338ca;
-    }
-
-        .btn-dian:hover {
-            background: #c7d2fe;
-        }
-
-    .btn-copy {
-        background: #dbeafe;
-        color: #2563eb;
-    }
-
-        .btn-copy:hover {
-            background: #bfdbfe;
-        }
-
-    .empty-state {
-        text-align: center;
-        padding: 48px 24px;
-        color: #9ca3af;
-    }
-
-    .empty-icon {
-        font-size: 48px;
-        display: block;
-        margin-bottom: 16px;
-    }
-
-    .btn-clear-filters {
-        margin-top: 16px;
-        padding: 10px 20px;
-        background: #a855f7;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-    }
-
-    .toast-notification {
-        position: fixed;
-        bottom: 24px;
-        right: 24px;
-        color: white;
-        padding: 16px 24px;
-        border-radius: 12px;
-        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-weight: 500;
-        animation: slideIn 0.3s ease;
-        z-index: 1000;
-    }
-
-        .toast-notification.success {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        }
-
-        .toast-notification.error {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        }
-
-        .toast-notification.info {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        }
-
-    @@keyframes slideIn {
-        from {
-            transform: translateX(400px);
-            opacity: 0;
-        }
-
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
 </style>
 
 @code {
@@ -640,7 +196,7 @@
     private string tipoMensaje = "success";
     private bool mostrarQR = false;
     private FacturaDTO? facturaSeleccionada = null;
-    private DateTime? filterFecha { get; set; }
+    private DateTime? filterFecha = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -707,9 +263,10 @@
                 );
             }
 
-            if (!string.IsNullOrWhiteSpace(filterFechaStr) && DateTime.TryParse(filterFechaStr, out var fechaFiltro))
+            // ✅ ARREGLADO: Filtro de fecha
+            if (filterFecha.HasValue)
             {
-                resultado = resultado.Where(f => f.FechaEmision.Date == fechaFiltro.Date);
+                resultado = resultado.Where(f => f.FechaEmision.Date == filterFecha.Value.Date);
             }
 
             return resultado.OrderByDescending(f => f.FechaEmision);
@@ -751,14 +308,149 @@
     {
         searchTerm = "";
         filterEstado = "";
-        filterFechaStr = "";
+        filterFecha = null;
         StateHasChanged();
     }
 
     private async Task ExportarFacturas()
     {
-        MostrarNotificacion("Función de exportación en desarrollo", "info");
-        // Implementar lógica de exportación a Excel/CSV
+        try
+        {
+            var facturasParaExportar = FacturasFiltradas.ToList();
+
+            if (!facturasParaExportar.Any())
+            {
+                MostrarNotificacion("No hay facturas para exportar", "error");
+                return;
+            }
+
+            using var workbook = new XLWorkbook();
+
+            // HOJA 1: FACTURAS
+            var worksheet = workbook.Worksheets.Add("Facturas");
+
+            // Encabezados con estilo
+            var headerRange = worksheet.Range("A1:J1");
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#4F46E5");
+            headerRange.Style.Font.FontColor = XLColor.White;
+            headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+            worksheet.Cell(1, 1).Value = "ID";
+            worksheet.Cell(1, 2).Value = "Número Factura";
+            worksheet.Cell(1, 3).Value = "Fecha Emisión";
+            worksheet.Cell(1, 4).Value = "ID Pedido";
+            worksheet.Cell(1, 5).Value = "ID Usuario";
+            worksheet.Cell(1, 6).Value = "CUFE";
+            worksheet.Cell(1, 7).Value = "Subtotal";
+            worksheet.Cell(1, 8).Value = "IVA";
+            worksheet.Cell(1, 9).Value = "Total";
+            worksheet.Cell(1, 10).Value = "Estado DIAN";
+
+            // Datos
+            int row = 2;
+            foreach (var factura in facturasParaExportar)
+            {
+                worksheet.Cell(row, 1).Value = factura.Id;
+                worksheet.Cell(row, 2).Value = factura.NumeroFactura;
+                worksheet.Cell(row, 3).Value = factura.FechaEmision.ToString("dd/MM/yyyy HH:mm");
+                worksheet.Cell(row, 4).Value = $"PED-{factura.IdPedido}";
+                worksheet.Cell(row, 5).Value = factura.IdUsuario;
+                worksheet.Cell(row, 6).Value = factura.Cufe ?? "N/A";
+                worksheet.Cell(row, 7).Value = factura.Subtotal;
+                worksheet.Cell(row, 8).Value = factura.Impuesto;
+                worksheet.Cell(row, 9).Value = factura.Total;
+                worksheet.Cell(row, 10).Value = string.IsNullOrEmpty(factura.EstadoDian) ? "Sin estado" : factura.EstadoDian;
+
+                // Formato de moneda
+                worksheet.Cell(row, 7).Style.NumberFormat.Format = "$#,##0.00";
+                worksheet.Cell(row, 8).Style.NumberFormat.Format = "$#,##0.00";
+                worksheet.Cell(row, 9).Style.NumberFormat.Format = "$#,##0.00";
+
+                // Estilo condicional para el estado
+                var estadoCell = worksheet.Cell(row, 10);
+                if (factura.EstadoDian?.ToLower() == "aprobada")
+                {
+                    estadoCell.Style.Font.FontColor = XLColor.FromHtml("#10B981");
+                    estadoCell.Style.Font.Bold = true;
+                }
+                else if (factura.EstadoDian?.ToLower() == "rechazada")
+                {
+                    estadoCell.Style.Font.FontColor = XLColor.FromHtml("#EF4444");
+                    estadoCell.Style.Font.Bold = true;
+                }
+                else
+                {
+                    estadoCell.Style.Font.FontColor = XLColor.FromHtml("#F59E0B");
+                }
+
+                row++;
+            }
+
+            // Ajustar ancho de columnas
+            worksheet.Columns().AdjustToContents();
+
+            // Agregar filtros
+            worksheet.RangeUsed().SetAutoFilter();
+
+            // HOJA 2: RESUMEN
+            var resumenSheet = workbook.Worksheets.Add("Resumen");
+
+            resumenSheet.Cell(1, 1).Value = "Resumen de Facturas Electrónicas";
+            resumenSheet.Cell(1, 1).Style.Font.Bold = true;
+            resumenSheet.Cell(1, 1).Style.Font.FontSize = 16;
+            resumenSheet.Range("A1:B1").Merge();
+
+            resumenSheet.Cell(3, 1).Value = "Métrica";
+            resumenSheet.Cell(3, 2).Value = "Valor";
+            var resumenHeader = resumenSheet.Range("A3:B3");
+            resumenHeader.Style.Font.Bold = true;
+            resumenHeader.Style.Fill.BackgroundColor = XLColor.FromHtml("#E5E7EB");
+
+            resumenSheet.Cell(4, 1).Value = "Total Facturas";
+            resumenSheet.Cell(4, 2).Value = facturas.Count;
+
+            resumenSheet.Cell(5, 1).Value = "Facturas Aprobadas";
+            resumenSheet.Cell(5, 2).Value = facturas.Count(f => f.EstadoDian == "Aprobada");
+            resumenSheet.Cell(5, 2).Style.Font.FontColor = XLColor.FromHtml("#10B981");
+
+            resumenSheet.Cell(6, 1).Value = "Facturas Pendientes";
+            resumenSheet.Cell(6, 2).Value = facturas.Count(f => f.EstadoDian != "Aprobada");
+            resumenSheet.Cell(6, 2).Style.Font.FontColor = XLColor.FromHtml("#F59E0B");
+
+            resumenSheet.Cell(8, 1).Value = "Subtotal Acumulado";
+            resumenSheet.Cell(8, 2).Value = facturas.Sum(f => f.Subtotal);
+            resumenSheet.Cell(8, 2).Style.NumberFormat.Format = "$#,##0.00";
+
+            resumenSheet.Cell(9, 1).Value = "IVA Total";
+            resumenSheet.Cell(9, 2).Value = facturas.Sum(f => f.Impuesto);
+            resumenSheet.Cell(9, 2).Style.NumberFormat.Format = "$#,##0.00";
+
+            resumenSheet.Cell(10, 1).Value = "Total General";
+            resumenSheet.Cell(10, 2).Value = facturas.Sum(f => f.Total);
+            resumenSheet.Cell(10, 2).Style.NumberFormat.Format = "$#,##0.00";
+            resumenSheet.Cell(10, 2).Style.Font.Bold = true;
+
+            resumenSheet.Cell(12, 1).Value = "Fecha de Exportación";
+            resumenSheet.Cell(12, 2).Value = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
+
+            resumenSheet.Columns().AdjustToContents();
+
+            // Convertir y descargar
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            var bytes = stream.ToArray();
+            var base64 = Convert.ToBase64String(bytes);
+            var fileName = $"facturas_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+            await JS.InvokeVoidAsync("downloadFile", fileName, base64);
+
+            MostrarNotificacion($"Se exportaron {facturasParaExportar.Count} facturas correctamente", "success");
+        }
+        catch (Exception ex)
+        {
+            MostrarNotificacion($"Error al exportar: {ex.Message}", "error");
+        }
     }
 
     private void MostrarNotificacion(string mensaje, string tipo = "success")

@@ -19,7 +19,6 @@
     <div class="products-card">
         <div class="toolbar">
             <div class="search-container">
-                <span style="position: absolute;">🔍</span>
                 <input type="text"
                        placeholder="Buscar productos..."
                        class="search-input"
@@ -27,7 +26,7 @@
                        @bind:event="oninput" />
             </div>
             <button class="btn-secondary" @onclick="AbrirModalFiltros">
-                <span>🔽</span>
+                <span><Icon Name="IconName.ExpandMore" /></span>
                 Filtros
             </button>
         </div>
@@ -87,11 +86,25 @@
                                 </td>
                                 <td>
                                     <div class="action-buttons">
-                                        <button class="btn-action btn-edit" @onclick="() => EditarProducto(product.IdArticulo)" title="Editar">
-                                            <span>✏️</span>
-                                        </button>
+                                        <!-- 🆕 MENÚ DESPLEGABLE PARA EDICIÓN -->
+                                        <div class="dropdown">
+                                            <button class="btn-action btn-edit" title="Editar">
+                                                <Icon Name="IconName.Pen" />
+                                            </button>
+                                            <div class="dropdown-menu">
+                                                <button class="dropdown-item" @onclick="() => EditarInformacion(product.IdArticulo)">
+                                                    <Icon Name="IconName.File" /> Información
+                                                </button>
+                                                <button class="dropdown-item" @onclick="() => EditarVariantes(product.IdArticulo)">
+                                                    <Icon Name="IconName.List" /> Variantes
+                                                </button>
+                                                <button class="dropdown-item" @onclick="() => EditarImagenes(product.IdArticulo)">
+                                                    <Icon Name="IconName.Image" /> Imágenes
+                                                </button>
+                                            </div>
+                                        </div>
                                         <button class="btn-action btn-delete" @onclick="() => ConfirmarEliminarProducto(product.IdArticulo, product.Nombre)" title="Eliminar">
-                                            <span>🗑️</span>
+                                            <Icon Name="IconName.Delete" />
                                         </button>
                                     </div>
                                 </td>
@@ -112,6 +125,7 @@
     </div>
 </div>
 
+<!-- MODAL DE FILTROS -->
 @if (mostrarModalFiltros)
 {
     <div class="modal-overlay" @onclick="CerrarModalFiltros">
@@ -193,6 +207,7 @@
     </div>
 }
 
+<!-- MODAL CONFIRMACIÓN ELIMINAR -->
 @if (mostrarModalConfirmacion)
 {
     <div class="modal-overlay" @onclick="CerrarModalConfirmacion">
@@ -231,17 +246,17 @@
     </div>
 }
 
-@if (mostrarModal)
+<!-- 🆕 MODAL CREAR PRODUCTO (Paso a paso) -->
+@if (mostrarModalCrear)
 {
-    <div class="modal-overlay" @onclick="CerrarModal">
+    <div class="modal-overlay" @onclick="CerrarModalCrear">
         <div class="modal-content modal-large" @onclick:stopPropagation>
             <div class="modal-header">
-                <h3>@(idProductoEditando.HasValue ? "Editar Producto" : "Nuevo Producto")</h3>
-                <button class="btn-close" @onclick="CerrarModal">✕</button>
+                <h3>Nuevo Producto</h3>
+                <button class="btn-close" @onclick="CerrarModalCrear">✕</button>
             </div>
 
             <div class="modal-body">
-
                 <div class="modal-steps">
                     <div class="step @(pasoModal == 1 ? "active" : pasoModal > 1 ? "completed" : "")">
                         <div class="step-number">1</div>
@@ -260,7 +275,6 @@
                 </div>
 
                 <form @onsubmit="GuardarProducto" @onsubmit:preventDefault>
-
                     @if (pasoModal == 1)
                     {
                         <div class="form-section">
@@ -359,8 +373,8 @@
                                                 </select>
                                             </div>
                                             <div class="form-group-inline">
-                                                <label>Color</label>
-                                                <input type="text" class="form-input-sm" @bind="variante.Color" placeholder="Rojo, Azul..." />
+                                                <label>Color *</label>
+                                                <input type="text" class="form-input-sm" @bind="variante.Color" placeholder="Rojo, Azul..." required />
                                             </div>
                                             <div class="form-group-inline">
                                                 <label>Stock</label>
@@ -495,18 +509,346 @@
     </div>
 }
 
+<!-- 🆕 MODAL EDITAR INFORMACIÓN -->
+@if (mostrarModalEditarInfo)
+{
+    <div class="modal-overlay" @onclick="CerrarModalEditarInfo">
+        <div class="modal-content modal-medium" @onclick:stopPropagation>
+            <div class="modal-header">
+                <h3>Editar Información del Producto</h3>
+                <button class="btn-close" @onclick="CerrarModalEditarInfo">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <form @onsubmit="GuardarInformacion" @onsubmit:preventDefault>
+                    <div class="form-section">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Nombre del Producto *</label>
+                                <input type="text" class="form-input" @bind="productoEditando.Nombre" required />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Marca *</label>
+                                <input type="text" class="form-input" @bind="productoEditando.Marca" required />
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Descripción *</label>
+                            <textarea class="form-textarea" rows="3" @bind="productoEditando.Descripcion" required></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Género *</label>
+                                <select class="form-select" @bind="productoEditando.Genero" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="Hombre">Hombre</option>
+                                    <option value="Mujer">Mujer</option>
+                                    <option value="Unisex">Unisex</option>
+                                    <option value="Niño">Niño</option>
+                                    <option value="Niña">Niña</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Material</label>
+                                <input type="text" class="form-input" @bind="productoEditando.Material" placeholder="Algodón, Poliéster..." />
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Precio Base *</label>
+                                <input type="number" class="form-input" @bind="productoEditando.PrecioBase" min="0" step="0.01" required />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Estado</label>
+                                <select class="form-select" @bind="productoEditando.Estado">
+                                    <option value="A">Activo</option>
+                                    <option value="I">Inactivo</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(mensajeErrorModal))
+                    {
+                        <div class="error-message-modal">
+                            <span>⚠️</span>
+                            <span>@mensajeErrorModal</span>
+                        </div>
+                    }
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-modal-back" @onclick="CerrarModalEditarInfo">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn-modal-save" disabled="@guardandoProducto">
+                            @if (guardandoProducto)
+                            {
+                                <span>Guardando...</span>
+                            }
+                            else
+                            {
+                                <span>💾 Guardar Cambios</span>
+                            }
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- 🆕 MODAL EDITAR VARIANTES -->
+@if (mostrarModalEditarVariantes)
+{
+    <div class="modal-overlay" @onclick="CerrarModalEditarVariantes">
+        <div class="modal-content modal-large" @onclick:stopPropagation>
+            <div class="modal-header">
+                <h3>Editar Variantes del Producto</h3>
+                <button class="btn-close" @onclick="CerrarModalEditarVariantes">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="variantes-header">
+                    <h4>Variantes (Talla y Color)</h4>
+                    <button type="button" class="btn-add-variant" @onclick="AgregarVarianteEdicion">
+                        ➕ Agregar Variante
+                    </button>
+                </div>
+
+                <div class="variantes-list">
+                    @foreach (var (variante, index) in variantesEditando.Select((v, i) => (v, i)))
+                    {
+                        <div class="variante-item">
+                            <div class="variante-number">@(index + 1)</div>
+                            <div class="variante-fields">
+                                <div class="form-group-inline">
+                                    <label>Talla *</label>
+                                    <select class="form-select-sm" @bind="variante.Talla" required>
+                                        <option value="">Seleccionar...</option>
+                                        <option value="XS">XS</option>
+                                        <option value="S">S</option>
+                                        <option value="M">M</option>
+                                        <option value="L">L</option>
+                                        <option value="XL">XL</option>
+                                        <option value="XXL">XXL</option>
+                                    </select>
+                                </div>
+                                <div class="form-group-inline">
+                                    <label>Color *</label>
+                                    <input type="text" class="form-input-sm" @bind="variante.Color" placeholder="Rojo, Azul..." required />
+                                </div>
+                                <div class="form-group-inline">
+                                    <label>Stock</label>
+                                    <input type="number" class="form-input-sm" @bind="variante.Stock" min="0" />
+                                </div>
+                                <div class="form-group-inline">
+                                    <label>Estado</label>
+                                    <select class="form-select-sm" @bind="variante.Estado">
+                                        <option value="A">Activo</option>
+                                        <option value="I">Inactivo</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="button" class="btn-remove-variant" @onclick="() => EliminarVarianteEdicion(index)">
+                                🗑️
+                            </button>
+                        </div>
+                    }
+                </div>
+
+                @if (!variantesEditando.Any())
+                {
+                    <div class="empty-variants">
+                        <span>📦</span>
+                        <p>No hay variantes. Agrega al menos una.</p>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(mensajeErrorModal))
+                {
+                    <div class="error-message-modal">
+                        <span>⚠️</span>
+                        <span>@mensajeErrorModal</span>
+                    </div>
+                }
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-modal-back" @onclick="CerrarModalEditarVariantes">
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn-modal-save" @onclick="GuardarVariantes" disabled="@guardandoProducto">
+                        @if (guardandoProducto)
+                        {
+                            <span>Guardando...</span>
+                        }
+                        else
+                        {
+                            <span>💾 Guardar Variantes</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- 🆕 MODAL EDITAR IMÁGENES -->
+@if (mostrarModalEditarImagenes)
+{
+    <div class="modal-overlay" @onclick="CerrarModalEditarImagenes">
+        <div class="modal-content modal-large" @onclick:stopPropagation>
+            <div class="modal-header">
+                <h3>Editar Imágenes del Producto</h3>
+                <button class="btn-close" @onclick="CerrarModalEditarImagenes">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-section">
+                    <h4>Imágenes del Producto</h4>
+
+                    <div class="image-upload-area">
+                        <div class="upload-box">
+                            <span class="upload-icon">📸</span>
+                            <p>Sube nuevas imágenes desde tu computadora</p>
+
+                            <label class="btn-upload" style="cursor:pointer; display: inline-block; margin-top: 10px;">
+                                Seleccionar Imagen
+                                <InputFile OnChange="OnFileSelectedModalEdicion" accept="image/*" style="display:none" />
+                            </label>
+
+                            @if (fileEdicion != null)
+                            {
+                                <p style="margin-top: 10px; color: #059669; font-size: 14px;">
+                                    ✓ Imagen seleccionada: <strong>@fileEdicion.Name</strong>
+                                </p>
+                            }
+
+                            <button type="button"
+                                    class="btn-upload"
+                                    @onclick="SubirImagenACloudinaryEdicion"
+                                    disabled="@(!hayImagenSeleccionadaEdicion || subiendoImagenEdicion)"
+                                    style="margin-top: 10px; background-color: #059669;">
+                                @if (subiendoImagenEdicion)
+                                {
+                                    <span>⏳ Subiendo...</span>
+                                }
+                                else
+                                {
+                                    <span>📤 Subir imagen</span>
+                                }
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="images-grid">
+                        @foreach (var (imagen, index) in imagenesEditando.Select((img, i) => (img, i)))
+                        {
+                            <div class="image-preview">
+                                <img src="@imagen.Url" alt="Imagen @(index + 1)" />
+                                <div class="image-controls">
+                                    <label class="image-principal">
+                                        <input type="radio" name="principalEdit" checked="@(imagen.EsPrincipal == 'S')" @onchange="() => MarcarComoPrincipalEdicion(index)" />
+                                        <span>Principal</span>
+                                    </label>
+                                    <button type="button" class="btn-remove-image" @onclick="() => EliminarImagenEdicion(index)">
+                                        ✕
+                                    </button>
+                                </div>
+                                <div class="image-order">
+                                    <input type="number" class="form-input-xs" @bind="imagen.Orden" min="1" placeholder="Orden" />
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    @if (!imagenesEditando.Any())
+                    {
+                        <div class="empty-images">
+                            <span>🖼️</span>
+                            <p>No hay imágenes. Agrega al menos una.</p>
+                        </div>
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(mensajeErrorModal))
+                {
+                    <div class="error-message-modal">
+                        <span>⚠️</span>
+                        <span>@mensajeErrorModal</span>
+                    </div>
+                }
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-modal-back" @onclick="CerrarModalEditarImagenes">
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn-modal-save" @onclick="GuardarImagenes" disabled="@guardandoProducto">
+                        @if (guardandoProducto)
+                        {
+                            <span>Guardando...</span>
+                        }
+                        else
+                        {
+                            <span>💾 Guardar Imágenes</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    /* Estilos para el menú desplegable */
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+        .dropdown:hover .dropdown-menu {
+            display: block;
+        }
+
+    .dropdown-menu {
+        display: none;
+        position: absolute;
+        right: 0;
+        background-color: white;
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        z-index: 1000;
+        border-radius: 8px;
+        padding: 8px 0;
+    }
+
+    .dropdown-item {
+        padding: 10px 16px;
+        text-align: left;
+        background: none;
+        border: none;
+        width: 100%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        transition: background-color 0.2s;
+    }
+
+        .dropdown-item:hover {
+            background-color: #f3f4f6;
+        }
+</style>
+
 @code {
+    // Variables existentes
     private string searchText = "";
     private List<ArticuloListaDTO> products = new();
-    private bool mostrarModal = false;
     private bool mostrarModalFiltros = false;
     private bool mostrarModalConfirmacion = false;
-    private int pasoModal = 1;
-    private ArticuloCreacionDTO nuevoProducto = new();
-    private int? idProductoEditando = null;
-    private bool guardandoProducto = false;
-    private bool eliminandoProducto = false;
-    private string mensajeErrorModal = "";
     private bool cargando = true;
 
     private List<CategoriaTipoDTO> categoriasTipo = new();
@@ -521,11 +863,34 @@
 
     private int? idProductoAEliminar = null;
     private string nombreProductoAEliminar = "";
+    private bool eliminandoProducto = false;
 
-    // Variables para manejo de imágenes con Cloudinary
+    // 🆕 Variables para CREAR producto
+    private bool mostrarModalCrear = false;
+    private int pasoModal = 1;
+    private ArticuloCreacionDTO nuevoProducto = new();
+    private bool guardandoProducto = false;
+    private string mensajeErrorModal = "";
     private IBrowserFile? file;
     private bool hayImagenSeleccionada => file != null;
     private bool subiendoImagen = false;
+
+    // 🆕 Variables para EDITAR INFORMACIÓN
+    private bool mostrarModalEditarInfo = false;
+    private ArticuloActualizacionDTO productoEditando = new();
+
+    // 🆕 Variables para EDITAR VARIANTES
+    private bool mostrarModalEditarVariantes = false;
+    private int idProductoEditandoVariantes = 0;
+    private List<VarianteActualizacionDTO> variantesEditando = new();
+
+    // 🆕 Variables para EDITAR IMÁGENES
+    private bool mostrarModalEditarImagenes = false;
+    private int idProductoEditandoImagenes = 0;
+    private List<ImagenActualizacionDTO> imagenesEditando = new();
+    private IBrowserFile? fileEdicion;
+    private bool hayImagenSeleccionadaEdicion => fileEdicion != null;
+    private bool subiendoImagenEdicion = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -635,6 +1000,7 @@
         }
     }
 
+    // ========== MÉTODOS DE FILTROS ==========
     private void AbrirModalFiltros()
     {
         mostrarModalFiltros = true;
@@ -660,74 +1026,21 @@
         filtroPrecioMax = null;
     }
 
+    // ========== MÉTODOS PARA CREAR PRODUCTO ==========
     private void AbrirModalNuevoProducto()
     {
         nuevoProducto = new ArticuloCreacionDTO();
-        idProductoEditando = null;
         pasoModal = 1;
         mensajeErrorModal = "";
         file = null;
-        mostrarModal = true;
+        mostrarModalCrear = true;
     }
 
-    private async Task EditarProducto(int id)
+    private void CerrarModalCrear()
     {
-        try
-        {
-            cargando = true;
-            var resultado = await ArticuloService.ObtenerArticuloPorId(id);
-
-            if (resultado.IsSuccess && resultado.Object != null)
-            {
-                var detalle = resultado.Object;
-
-                nuevoProducto = new ArticuloCreacionDTO
-                {
-                    Nombre = detalle.Nombre,
-                    Descripcion = detalle.Descripcion,
-                    Marca = detalle.Marca,
-                    Genero = detalle.Genero,
-                    Material = detalle.Material,
-                    PrecioBase = detalle.PrecioBase,
-                    CategoriaTipoId = detalle.CategoriaTipoId,
-                    CategoriaOcasionId = detalle.CategoriaOcasionId,
-                    Estado = detalle.Estado[0],
-                    Variantes = detalle.Variantes.Select(v => new VarianteArticuloDTO
-                    {
-                        Talla = v.Talla,
-                        Color = v.Color,
-                        Stock = v.Stock
-                    }).ToList(),
-                    Imagenes = detalle.Imagenes.ToList()
-                };
-
-                idProductoEditando = id;
-                pasoModal = 1;
-                mensajeErrorModal = "";
-                file = null;
-                mostrarModal = true;
-            }
-            else
-            {
-                Console.WriteLine($"Error al cargar producto: {resultado.Message}");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error al editar producto: {ex.Message}");
-        }
-        finally
-        {
-            cargando = false;
-        }
-    }
-
-    private void CerrarModal()
-    {
-        mostrarModal = false;
+        mostrarModalCrear = false;
         pasoModal = 1;
         nuevoProducto = new();
-        idProductoEditando = null;
         mensajeErrorModal = "";
         file = null;
         subiendoImagen = false;
@@ -777,17 +1090,6 @@
                 mensajeErrorModal = "Todas las variantes deben tener un color especificado";
                 return;
             }
-
-            // var duplicados = nuevoProducto.Variantes
-            //     .GroupBy(v => new { v.Talla, v.Color })
-            //     .Where(g => g.Count() > 1)
-            //     .ToList();
-
-            // if (duplicados.Any())
-            // {
-            //     mensajeErrorModal = "Hay variantes duplicadas. Cada combinación talla-color debe ser única";
-            //     return;
-            // }
         }
 
         pasoModal++;
@@ -814,12 +1116,9 @@
         nuevoProducto.Variantes.RemoveAt(index);
     }
 
-    // ========== MÉTODOS PARA MANEJO DE IMÁGENES CON CLOUDINARY ==========
-
     private void OnFileSelectedModal(InputFileChangeEventArgs e)
     {
         file = e.File;
-        Console.WriteLine($"Imagen seleccionada: {file.Name}");
         StateHasChanged();
     }
 
@@ -836,7 +1135,6 @@
             subiendoImagen = true;
             mensajeErrorModal = "";
 
-            // Validar tamaño (máximo 10MB)
             if (file.Size > 10 * 1024 * 1024)
             {
                 mensajeErrorModal = "La imagen no puede superar los 10MB";
@@ -855,7 +1153,6 @@
 
             if (result.StatusCode == System.Net.HttpStatusCode.OK)
             {
-                // ✅ Agregar la URL a la lista de imágenes del producto
                 nuevoProducto.Imagenes.Add(new ImagenArticuloDTO
                 {
                     Url = result.SecureUrl.ToString(),
@@ -863,9 +1160,6 @@
                     EsPrincipal = !nuevoProducto.Imagenes.Any() ? 'S' : 'N'
                 });
 
-                Console.WriteLine($"✓ Imagen subida y agregada: {result.SecureUrl}");
-
-                // Limpiar la selección
                 file = null;
             }
             else
@@ -876,7 +1170,6 @@
         catch (Exception ex)
         {
             mensajeErrorModal = $"Error al subir imagen: {ex.Message}";
-            Console.WriteLine($"Error completo: {ex}");
         }
         finally
         {
@@ -890,13 +1183,11 @@
         var imagen = nuevoProducto.Imagenes[index];
         nuevoProducto.Imagenes.RemoveAt(index);
 
-        // Si era la principal y quedan imágenes, hacer la primera como principal
         if (imagen.EsPrincipal == 'S' && nuevoProducto.Imagenes.Any())
         {
             nuevoProducto.Imagenes[0].EsPrincipal = 'S';
         }
 
-        // Reordenar
         for (int i = 0; i < nuevoProducto.Imagenes.Count; i++)
         {
             nuevoProducto.Imagenes[i].Orden = i + 1;
@@ -905,28 +1196,22 @@
 
     private void MarcarComoPrincipal(int index)
     {
-        // Marcar todas como no principales
         foreach (var img in nuevoProducto.Imagenes)
         {
             img.EsPrincipal = 'N';
         }
 
-        // Marcar la seleccionada como principal
         nuevoProducto.Imagenes[index].EsPrincipal = 'S';
 
-        // Reorganizar: mover la principal al inicio
         var imagenSeleccionada = nuevoProducto.Imagenes[index];
         nuevoProducto.Imagenes.RemoveAt(index);
         nuevoProducto.Imagenes.Insert(0, imagenSeleccionada);
 
-        // Reordenar todas
         for (int i = 0; i < nuevoProducto.Imagenes.Count; i++)
         {
             nuevoProducto.Imagenes[i].Orden = i + 1;
         }
     }
-
-    // ========== FIN MÉTODOS CLOUDINARY ==========
 
     private async Task GuardarProducto()
     {
@@ -942,50 +1227,16 @@
         {
             guardandoProducto = true;
 
-            Response<int> resultado;
+            var resultado = await ArticuloService.RegistrarArticuloCompleto(nuevoProducto);
 
-            if (idProductoEditando.HasValue)
+            if (resultado.IsSuccess)
             {
-                var actualizacion = new ArticuloActualizacionDTO
-                {
-                    IdArticulo = idProductoEditando.Value,
-                    Nombre = nuevoProducto.Nombre,
-                    Descripcion = nuevoProducto.Descripcion,
-                    Marca = nuevoProducto.Marca,
-                    Genero = nuevoProducto.Genero,
-                    Material = nuevoProducto.Material,
-                    PrecioBase = nuevoProducto.PrecioBase,
-                    Estado = nuevoProducto.Estado
-                };
-
-                var resultadoActualizacion = await ArticuloService.ActualizarArticulo(actualizacion);
-
-                if (resultadoActualizacion.IsSuccess)
-                {
-                    Console.WriteLine($"Producto actualizado: {idProductoEditando.Value}");
-                    await CargarProductos();
-                    CerrarModal();
-                }
-                else
-                {
-                    mensajeErrorModal = resultadoActualizacion.Message;
-                }
+                await CargarProductos();
+                CerrarModalCrear();
             }
             else
             {
-                resultado = await ArticuloService.RegistrarArticuloCompleto(nuevoProducto);
-
-                if (resultado.IsSuccess)
-                {
-                    Console.WriteLine($"✓ Producto guardado con ID: {resultado.Object}");
-                    Console.WriteLine($"✓ Con {nuevoProducto.Imagenes.Count} imágenes guardadas en Oracle");
-                    await CargarProductos();
-                    CerrarModal();
-                }
-                else
-                {
-                    mensajeErrorModal = resultado.Message;
-                }
+                mensajeErrorModal = resultado.Message;
             }
         }
         catch (Exception ex)
@@ -998,6 +1249,376 @@
         }
     }
 
+    // ========== 🆕 MÉTODOS PARA EDITAR INFORMACIÓN ==========
+    private async Task EditarInformacion(int id)
+    {
+        try
+        {
+            cargando = true;
+            var resultado = await ArticuloService.ObtenerArticuloPorId(id);
+
+            if (resultado.IsSuccess && resultado.Object != null)
+            {
+                var detalle = resultado.Object;
+
+                productoEditando = new ArticuloActualizacionDTO
+                {
+                    IdArticulo = id,
+                    Nombre = detalle.Nombre,
+                    Descripcion = detalle.Descripcion,
+                    Marca = detalle.Marca,
+                    Genero = detalle.Genero,
+                    Material = detalle.Material,
+                    PrecioBase = detalle.PrecioBase,
+                    Estado = detalle.Estado[0]
+                };
+
+                mensajeErrorModal = "";
+                mostrarModalEditarInfo = true;
+            }
+            else
+            {
+                Console.WriteLine($"Error al cargar producto: {resultado.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private void CerrarModalEditarInfo()
+    {
+        mostrarModalEditarInfo = false;
+        productoEditando = new();
+        mensajeErrorModal = "";
+    }
+
+    private async Task GuardarInformacion()
+    {
+        mensajeErrorModal = "";
+
+        try
+        {
+            guardandoProducto = true;
+
+            var resultado = await ArticuloService.ActualizarArticulo(productoEditando);
+
+            if (resultado.IsSuccess)
+            {
+                await CargarProductos();
+                CerrarModalEditarInfo();
+            }
+            else
+            {
+                mensajeErrorModal = resultado.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeErrorModal = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            guardandoProducto = false;
+        }
+    }
+
+    // ========== 🆕 MÉTODOS PARA EDITAR VARIANTES ==========
+    private async Task EditarVariantes(int id)
+    {
+        try
+        {
+            cargando = true;
+            var resultado = await ArticuloService.ObtenerArticuloPorId(id);
+
+            if (resultado.IsSuccess && resultado.Object != null)
+            {
+                var detalle = resultado.Object;
+                idProductoEditandoVariantes = id;
+
+                variantesEditando = detalle.Variantes.Select(v => new VarianteActualizacionDTO
+                {
+                    IdVariante = v.IdVariante,
+                    Talla = v.Talla,
+                    Color = v.Color,
+                    Stock = v.Stock,
+                    Estado = v.Estado[0]
+                }).ToList();
+
+                mensajeErrorModal = "";
+                mostrarModalEditarVariantes = true;
+            }
+            else
+            {
+                Console.WriteLine($"Error al cargar producto: {resultado.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private void CerrarModalEditarVariantes()
+    {
+        mostrarModalEditarVariantes = false;
+        variantesEditando = new();
+        idProductoEditandoVariantes = 0;
+        mensajeErrorModal = "";
+    }
+
+    private void AgregarVarianteEdicion()
+    {
+        variantesEditando.Add(new VarianteActualizacionDTO
+        {
+            IdVariante = null,
+            Talla = "",
+            Color = "",
+            Stock = 0,
+            Estado = 'A'
+        });
+    }
+
+    private void EliminarVarianteEdicion(int index)
+    {
+        variantesEditando.RemoveAt(index);
+    }
+
+    private async Task GuardarVariantes()
+    {
+        mensajeErrorModal = "";
+
+        if (!variantesEditando.Any())
+        {
+            mensajeErrorModal = "Debe haber al menos una variante";
+            return;
+        }
+
+        var variantesSinDatos = variantesEditando
+            .Where(v => string.IsNullOrWhiteSpace(v.Talla) || string.IsNullOrWhiteSpace(v.Color))
+            .ToList();
+
+        if (variantesSinDatos.Any())
+        {
+            mensajeErrorModal = "Todas las variantes deben tener talla y color";
+            return;
+        }
+
+        try
+        {
+            guardandoProducto = true;
+
+            var dto = new ActualizarVariantesDTO
+            {
+                IdArticulo = idProductoEditandoVariantes,
+                Variantes = variantesEditando
+            };
+
+        }
+        catch (Exception ex)
+        {
+            mensajeErrorModal = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            guardandoProducto = false;
+        }
+    }
+
+    // ========== 🆕 MÉTODOS PARA EDITAR IMÁGENES ==========
+    private async Task EditarImagenes(int id)
+    {
+        try
+        {
+            cargando = true;
+            var resultado = await ArticuloService.ObtenerArticuloPorId(id);
+
+            if (resultado.IsSuccess && resultado.Object != null)
+            {
+                var detalle = resultado.Object;
+                idProductoEditandoImagenes = id;
+
+                imagenesEditando = detalle.Imagenes.Select(img => new ImagenActualizacionDTO
+                {
+                    IdImagen = img.Id,
+                    Url = img.Url,
+                    Orden = img.Orden,
+                    EsPrincipal = img.EsPrincipal
+                }).ToList();
+
+                mensajeErrorModal = "";
+                fileEdicion = null;
+                mostrarModalEditarImagenes = true;
+            }
+            else
+            {
+                Console.WriteLine($"Error al cargar producto: {resultado.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private void CerrarModalEditarImagenes()
+    {
+        mostrarModalEditarImagenes = false;
+        imagenesEditando = new();
+        idProductoEditandoImagenes = 0;
+        mensajeErrorModal = "";
+        fileEdicion = null;
+    }
+
+    private void OnFileSelectedModalEdicion(InputFileChangeEventArgs e)
+    {
+        fileEdicion = e.File;
+        StateHasChanged();
+    }
+
+    private async Task SubirImagenACloudinaryEdicion()
+    {
+        if (fileEdicion == null)
+        {
+            mensajeErrorModal = "No hay imagen seleccionada";
+            return;
+        }
+
+        try
+        {
+            subiendoImagenEdicion = true;
+            mensajeErrorModal = "";
+
+            if (fileEdicion.Size > 10 * 1024 * 1024)
+            {
+                mensajeErrorModal = "La imagen no puede superar los 10MB";
+                return;
+            }
+
+            using var stream = fileEdicion.OpenReadStream(10 * 1024 * 1024);
+
+            var uploadParams = new CloudinaryDotNet.Actions.ImageUploadParams
+            {
+                File = new CloudinaryDotNet.FileDescription(fileEdicion.Name, stream),
+                Folder = "imagenes_productos"
+            };
+
+            var result = await cloudinary.UploadAsync(uploadParams);
+
+            if (result.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                imagenesEditando.Add(new ImagenActualizacionDTO
+                {
+                    IdImagen = null,
+                    Url = result.SecureUrl.ToString(),
+                    Orden = imagenesEditando.Count + 1,
+                    EsPrincipal = !imagenesEditando.Any() ? 'S' : 'N'
+                });
+
+                fileEdicion = null;
+            }
+            else
+            {
+                mensajeErrorModal = $"Error al subir la imagen: {result.Error?.Message}";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeErrorModal = $"Error al subir imagen: {ex.Message}";
+        }
+        finally
+        {
+            subiendoImagenEdicion = false;
+            StateHasChanged();
+        }
+    }
+
+    private void EliminarImagenEdicion(int index)
+    {
+        var imagen = imagenesEditando[index];
+        imagenesEditando.RemoveAt(index);
+
+        if (imagen.EsPrincipal == 'S' && imagenesEditando.Any())
+        {
+            imagenesEditando[0].EsPrincipal = 'S';
+        }
+
+        for (int i = 0; i < imagenesEditando.Count; i++)
+        {
+            imagenesEditando[i].Orden = i + 1;
+        }
+    }
+
+    private void MarcarComoPrincipalEdicion(int index)
+    {
+        foreach (var img in imagenesEditando)
+        {
+            img.EsPrincipal = 'N';
+        }
+
+        imagenesEditando[index].EsPrincipal = 'S';
+
+        var imagenSeleccionada = imagenesEditando[index];
+        imagenesEditando.RemoveAt(index);
+        imagenesEditando.Insert(0, imagenSeleccionada);
+
+        for (int i = 0; i < imagenesEditando.Count; i++)
+        {
+            imagenesEditando[i].Orden = i + 1;
+        }
+    }
+
+    private async Task GuardarImagenes()
+    {
+        mensajeErrorModal = "";
+
+        if (!imagenesEditando.Any())
+        {
+            mensajeErrorModal = "Debe haber al menos una imagen";
+            return;
+        }
+
+        if (!imagenesEditando.Any(img => img.EsPrincipal == 'S'))
+        {
+            mensajeErrorModal = "Debe marcar al menos una imagen como principal";
+            return;
+        }
+
+        try
+        {
+            guardandoProducto = true;
+
+            var dto = new ActualizarImagenesDTO
+            {
+                IdArticulo = idProductoEditandoImagenes,
+                Imagenes = imagenesEditando
+            };
+
+        }
+        catch (Exception ex)
+        {
+            mensajeErrorModal = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            guardandoProducto = false;
+        }
+    }
+
+    // ========== MÉTODOS PARA ELIMINAR ==========
     private void ConfirmarEliminarProducto(int id, string nombre)
     {
         idProductoAEliminar = id;
@@ -1023,7 +1644,6 @@
 
             if (resultado.IsSuccess)
             {
-                Console.WriteLine($"Producto eliminado: {idProductoAEliminar.Value}");
                 await CargarProductos();
                 CerrarModalConfirmacion();
             }
@@ -1042,6 +1662,7 @@
         }
     }
 
+    // ========== MÉTODOS AUXILIARES ==========
     private string GetVariantesClass(int total)
     {
         return total > 0 ? "stock-normal" : "stock-low";

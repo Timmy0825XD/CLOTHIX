@@ -7,7 +7,7 @@
 @layout AuthLayout
 @inject NavigationManager NavigationManager
 @inject IUsuarioService UsuarioService
-@inject SesionService Sesion
+@inject SesionService SesionService
 
 <div class="login-container">
     <div class="login-card">
@@ -89,7 +89,7 @@
 
             if (resultado.IsSuccess && resultado.Object != null)
             {
-                await Sesion.IniciarSesion(resultado.Object);
+                await SesionService.IniciarSesion(resultado.Object);
 
                 Console.WriteLine($"Usuario logueado: {resultado.Object.NombreCompleto} (ID: {resultado.Object.IdUsuario})");
 

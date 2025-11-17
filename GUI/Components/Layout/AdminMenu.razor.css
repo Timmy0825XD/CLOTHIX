@@ -42,15 +42,32 @@
 }
 
 .logout-btn {
+    margin-top: 100px;
     display: flex;
     align-items: center;
-    padding: 14px 20px;
-    color: red;
-    text-decoration: none;
+    gap: 10px;
+    padding: 14px 22px;
+    color: #dc2626;
     font-weight: 600;
+    font-size: 15px;
+    border: none;
+    border-radius: 8px;
+    background-color: #fee2e2;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
     .logout-btn:hover {
-        background-color: #fee2e2;
-        color: #dc2626;
+        background-color: #fecaca;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+        transform: translateY(-1px);
     }
+
+    .logout-btn:active {
+        transform: scale(0.97);
+    }
+
+.logout-icon {
+    font-size: 18px;
+}

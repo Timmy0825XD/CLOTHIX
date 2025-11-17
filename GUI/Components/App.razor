@@ -22,6 +22,26 @@
     <Routes @rendermode="InteractiveServer" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
     <script src="_framework/blazor.web.js"></script>
+    <script>
+        window.downloadFile = function(filename, base64String) {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = "data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64," + base64String;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+                window.downloadFile = function(filename, base64String) {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = "data:text/csv;base64," + base64String;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
 </body>
+
 
 </html>
