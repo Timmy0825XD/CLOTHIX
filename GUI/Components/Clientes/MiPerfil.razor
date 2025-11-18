@@ -285,40 +285,79 @@
                 return;
             }
 
-            var resultadoUsuarioCompleto = await UsuarioService.ObtenerTodosLosUsuarios();
+            // ✅ USAR EL MÉTODO QUE SÍ FUNCIONA (igual que en Checkout)
+            var resultadoUsuarioConDireccion = await UsuarioService.ObtenerUsuarioConDireccion(idUsuario.Value);
 
-            if (resultadoUsuarioCompleto.IsSuccess && resultadoUsuarioCompleto.ListObject != null)
+            if (resultadoUsuarioConDireccion.IsSuccess && resultadoUsuarioConDireccion.Object != null)
             {
-                usuario = resultadoUsuarioCompleto.ListObject.FirstOrDefault(u => u.Id == idUsuario.Value);
+                var usuarioConDireccion = resultadoUsuarioConDireccion.Object;
 
-                if (usuario != null)
+                // Ahora necesitamos cargar el usuario completo para tener TODOS los campos
+                var resultadoUsuarioCompleto = await UsuarioService.ObtenerTodosLosUsuarios();
+
+                if (resultadoUsuarioCompleto.IsSuccess && resultadoUsuarioCompleto.ListObject != null)
                 {
-                    usuarioOriginal = new UsuarioDTO
-                    {
-                        Id = usuario.Id,
-                        Cedula = usuario.Cedula,
-                        PrimerNombre = usuario.PrimerNombre,
-                        SegundoNombre = usuario.SegundoNombre,
-                        ApellidoPaterno = usuario.ApellidoPaterno,
-                        ApellidoMaterno = usuario.ApellidoMaterno,
-                        Correo = usuario.Correo,
-                        TelefonoPrincipal = usuario.TelefonoPrincipal,
-                        TelefonoSecundario = usuario.TelefonoSecundario,
-                        Estado = usuario.Estado,
-                        FechaRegistro = usuario.FechaRegistro,
-                        RolId = usuario.RolId,
-                        DireccionId = usuario.DireccionId,
-                        Contrasena = usuario.Contrasena
-                    };
+                    usuario = resultadoUsuarioCompleto.ListObject.FirstOrDefault(u => u.Id == idUsuario.Value);
 
-                    if (usuario.DireccionId.HasValue && usuario.DireccionId.Value > 0)
+                    if (usuario != null)
                     {
-                        var resultadoDireccion = await DireccionService.ObtenerDireccionPorId(usuario.DireccionId.Value);
-
-                        if (resultadoDireccion.IsSuccess && resultadoDireccion.Object != null)
+                        // Guardar copia original
+                        usuarioOriginal = new UsuarioDTO
                         {
-                            direccion = resultadoDireccion.Object;
+                            Id = usuario.Id,
+                            Cedula = usuario.Cedula,
+                            PrimerNombre = usuario.PrimerNombre,
+                            SegundoNombre = usuario.SegundoNombre,
+                            ApellidoPaterno = usuario.ApellidoPaterno,
+                            ApellidoMaterno = usuario.ApellidoMaterno,
+                            Correo = usuario.Correo,
+                            TelefonoPrincipal = usuario.TelefonoPrincipal,
+                            TelefonoSecundario = usuario.TelefonoSecundario,
+                            Estado = usuario.Estado,
+                            FechaRegistro = usuario.FechaRegistro,
+                            RolId = usuario.RolId,
+                            DireccionId = usuario.DireccionId,
+                            Contrasena = usuario.Contrasena
+                        };
 
+                        // ✅ SI TIENE DIRECCIÓN, MAPEARLA DESDE usuarioConDireccion (que SÍ funciona)
+                        if (usuarioConDireccion.IdDireccion.HasValue && usuarioConDireccion.IdDireccion.Value > 0)
+                        {
+                            // Crear DireccionDetalleDTO desde los datos de usuarioConDireccion
+                            direccion = new DireccionDetalleDTO
+                            {
+                                IdDireccion = usuarioConDireccion.IdDireccion.Value,
+                                CiudadId = 0, // Lo obtendremos buscando en las ciudades
+                                DireccionCompleta = usuarioConDireccion.DireccionCompleta ?? "",
+                                Barrio = usuarioConDireccion.Barrio ?? "",
+                                CodigoPostal = usuarioConDireccion.CodigoPostal,
+                                Referencia = "", // No viene en UsuarioConDireccionDTO
+                                CiudadNombre = usuarioConDireccion.CiudadNombre ?? "",
+                                CiudadDepartamento = usuarioConDireccion.Departamento ?? ""
+                            };
+
+                            // Cargar ciudades primero para poder obtener el CiudadId
+                            var resultadoCiudades = await DireccionService.ObtenerTodasLasCiudades();
+                            if (resultadoCiudades.IsSuccess && resultadoCiudades.ListObject != null)
+                            {
+                                ciudades = resultadoCiudades.ListObject.ToList();
+
+                                // Buscar el CiudadId comparando nombre y departamento
+                                var ciudadEncontrada = ciudades.FirstOrDefault(c =>
+                                    c.Nombre == usuarioConDireccion.CiudadNombre &&
+                                    c.Departamento == usuarioConDireccion.Departamento);
+
+                                if (ciudadEncontrada != null)
+                                {
+                                    direccion.CiudadId = ciudadEncontrada.Id;
+                                }
+                            }
+                            else
+                            {
+                                ciudades = new List<CiudadDTO>();
+                            }
+
+                            // Inicializar direccionEditar para poder editarla
                             direccionEditar = new DireccionActualizacionDTO
                             {
                                 IdDireccion = direccion.IdDireccion,
@@ -329,23 +368,26 @@
                                 Referencia = direccion.Referencia
                             };
                         }
+                        else
+                        {
+                            // Si no tiene dirección, igual cargar ciudades
+                            var resultadoCiudades = await DireccionService.ObtenerTodasLasCiudades();
+                            if (resultadoCiudades.IsSuccess && resultadoCiudades.ListObject != null)
+                            {
+                                ciudades = resultadoCiudades.ListObject.ToList();
+                            }
+                            else
+                            {
+                                ciudades = new List<CiudadDTO>();
+                            }
+                        }
                     }
                 }
-            }
-
-            var resultadoCiudades = await DireccionService.ObtenerTodasLasCiudades();
-
-            if (resultadoCiudades.IsSuccess && resultadoCiudades.ListObject != null)
-            {
-                ciudades = resultadoCiudades.ListObject.ToList();
-            }
-            else
-            {
-                ciudades = new List<CiudadDTO>();
             }
         }
         catch (Exception ex)
         {
+            // Manejar error silenciosamente
         }
         finally
         {
