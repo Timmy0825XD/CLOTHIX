@@ -18,28 +18,6 @@ namespace BLL.Implementaciones
         {
             _favoritoDAO = favoritoDAO;
         }
-
-        public async Task<Response<int>> AgregarFavorito(int idUsuario, int idArticulo)
-        {
-            try
-            {
-                if (idUsuario <= 0)
-                {
-                    return Response<int>.Fail("ID de usuario inválido");
-                }
-
-                if (idArticulo <= 0)
-                {
-                    return Response<int>.Fail("ID de artículo inválido");
-                }
-
-                return await _favoritoDAO.AgregarFavorito(idUsuario, idArticulo);
-            }
-            catch (Exception ex)
-            {
-                return Response<int>.Fail($"Error en la capa de negocio: {ex.Message}");
-            }
-        }
         public async Task<Response<bool>> EliminarFavorito(int idUsuario, int idArticulo)
         {
             try
@@ -83,28 +61,6 @@ namespace BLL.Implementaciones
             }
         }
 
-        public async Task<Response<int>> EsFavorito(int idUsuario, int idArticulo)
-        {
-            try
-            {
-                if (idUsuario <= 0)
-                {
-                    return Response<int>.Fail("ID de usuario inválido");
-                }
-
-                if (idArticulo <= 0)
-                {
-                    return Response<int>.Fail("ID de artículo inválido");
-                }
-
-                return await _favoritoDAO.EsFavorito(idUsuario, idArticulo);
-            }
-            catch (Exception ex)
-            {
-                return Response<int>.Fail($"Error en la capa de negocio: {ex.Message}");
-            }
-        }
-
         public async Task<Response<FavoritoDTO>> ObtenerFavoritosUsuario(int idUsuario)
         {
             try
@@ -120,30 +76,6 @@ namespace BLL.Implementaciones
             {
                 return Response<FavoritoDTO>.Fail($"Error en la capa de negocio: {ex.Message}");
             }
-        }
-
-        public async Task<Response<EstadisticaFavoritoDTO>> ObtenerEstadisticasFavoritos()
-        {
-            try
-            {
-                return await _favoritoDAO.ObtenerEstadisticasFavoritos();
-            }
-            catch (Exception ex)
-            {
-                return Response<EstadisticaFavoritoDTO>.Fail($"Error en la capa de negocio: {ex.Message}");
-            }
-        }
-
-        public async Task<Response<int>> LimpiarFavoritosInactivos()
-        {
-            try
-            {
-                return await _favoritoDAO.LimpiarFavoritosInactivos();
-            }
-            catch (Exception ex)
-            {
-                return Response<int>.Fail($"Error en la capa de negocio: {ex.Message}");
-            }
-        }
+        } 
     }
 }

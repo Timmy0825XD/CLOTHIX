@@ -4,14 +4,8 @@ using ENTITY.Facturas;
 using ENTITY.Pedidos;
 using ENTITY.Utilidades;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
 using System.Net.Http.Json;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace BLL.Implementaciones
 {
@@ -228,33 +222,6 @@ namespace BLL.Implementaciones
         public async Task<Response<FacturaDTO>> ObtenerTodasFacturas()
         {
             return await _facturaDAO.ObtenerTodasFacturas();
-        }
-
-        public async Task<Response<FacturaDTO>> ObtenerFacturaPorId(int idFactura)
-        {
-            return await _facturaDAO.ObtenerFacturaPorId(idFactura);
-        }
-
-        public async Task<Response<FacturaDTO>> ObtenerFacturasUsuario(int idUsuario)
-        {
-            return await _facturaDAO.ObtenerFacturasUsuario(idUsuario);
-        }
-
-        public async Task<Response<FacturaDTO>> ObtenerFacturaPorPedido(int idPedido)
-        {
-            return await _facturaDAO.ObtenerFacturaPorPedido(idPedido);
-        }
-
-        public async Task<Response<bool>> ExisteFacturaParaPedido(int idPedido)
-        {
-            var verificacion = await _facturaDAO.VerificarFacturaPedido(idPedido);
-            if (!verificacion.IsSuccess)
-                return Response<bool>.Fail(verificacion.Message);
-
-            return Response<bool>.Done(
-                verificacion.Object.Existe ? "Existe factura para este pedido" : "No existe factura para este pedido",
-                verificacion.Object.Existe
-            );
         }
     }
 }
