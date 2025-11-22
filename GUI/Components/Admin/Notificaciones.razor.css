@@ -1,7 +1,6 @@
 ﻿/* CONTENEDOR PRINCIPAL */
 .notification-container {
     position: relative;
-    display: inline-block;
 }
 
 /* CAMPANITA */
@@ -121,6 +120,7 @@
 /* LISTA DE NOTIFICACIONES */
 .notification-list {
     display:flex;
+    flex-direction:column;
     max-height: 400px;
     overflow-y: auto;
 }
