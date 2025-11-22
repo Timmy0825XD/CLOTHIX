@@ -2,6 +2,7 @@
 @using ENTITY.Pedidos
 @using ENTITY.Direcciones
 @using ENTITY.Usuarios
+@using ENTITY.Cupones
 @using GUI.Components.Layout
 @using GUI.Services
 @using BLL.Interfaces
@@ -9,6 +10,7 @@
 @inject CarritoService Carrito
 @inject IPedidoService PedidoService
 @inject IUsuarioService UsuarioService
+@inject ICuponService CuponService
 @inject NavigationManager Navigation
 @inject SesionService Sesion
 
@@ -79,13 +81,13 @@
                             </div>
 
                             <div class="info-note">
-                                <p> Esta es tu dirección de envío registrada</p>
+                                <p>📍 Esta es tu dirección de envío registrada</p>
                             </div>
                         }
                         else
                         {
                             <div class="error-message">
-                                <p>No tienes una dirección registrada. Por favor, actualiza tu perfil antes de continuar.</p>
+                                <p>⚠️ No tienes una dirección registrada. Por favor, actualiza tu perfil antes de continuar.</p>
                             </div>
                         }
 
@@ -214,10 +216,109 @@
                 <div class="resumen-card">
                     <h3>Resumen</h3>
 
+                    <!-- SECCIÓN DE CUPONES -->
+                    <div class="cupon-section">
+                        @if (cuponAplicado != null)
+                        {
+                            <div class="cupon-aplicado">
+                                <div class="cupon-info">
+                                    <span class="cupon-icon">🎟️</span>
+                                    <div class="cupon-detalles">
+                                        <strong>@cuponAplicado.Codigo</strong>
+                                        <small>@cuponAplicado.Descripcion</small>
+                                    </div>
+                                </div>
+                                <button class="btn-remover-cupon" @onclick="RemoverCupon" title="Remover cupón">
+                                    ✕
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="cupon-input-group">
+                                <input type="text"
+                                       class="cupon-input"
+                                       placeholder="Código de cupón"
+                                       @bind="codigoCupon"
+                                       @bind:event="oninput"
+                                       disabled="@validandoCupon" />
+                                <button class="btn-aplicar-cupon"
+                                        @onclick="ValidarYAplicarCupon"
+                                        disabled="@(string.IsNullOrWhiteSpace(codigoCupon) || validandoCupon)">
+                                    @if (validandoCupon)
+                                    {
+                                        <span>⏳</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Aplicar</span>
+                                    }
+                                </button>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(mensajeCupon))
+                            {
+                                <div class="cupon-mensaje @(mensajeCuponTipo)">
+                                    <small>@mensajeCupon</small>
+                                </div>
+                            }
+                        }
+
+                        @if (cuponesDisponibles.Any())
+                        {
+                            <div class="cupones-disponibles">
+                                <button class="btn-toggle-cupones" @onclick="ToggleCuponesDisponibles">
+                                    @(mostrarCuponesDisponibles ? "Ocultar cupones" : $"Ver {cuponesDisponibles.Count} cupones disponibles")
+                                    @(mostrarCuponesDisponibles ? "▲" : "▼")
+                                </button>
+
+                                @if (mostrarCuponesDisponibles)
+                                {
+                                    <div class="lista-cupones-disponibles">
+                                        @foreach (var cupon in cuponesDisponibles)
+                                        {
+                                            <div class="cupon-disponible" @onclick="() => AplicarCuponDirecto(cupon.Codigo)">
+                                                <div class="cupon-badge">
+                                                    @if (cupon.TipoDescuento == "PORCENTAJE")
+                                                    {
+                                                        <span class="descuento-porcentaje">@cupon.ValorDescuento%</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="descuento-monto">$@cupon.ValorDescuento.ToString("N0")</span>
+                                                    }
+                                                </div>
+                                                <div class="cupon-detalle">
+                                                    <strong>@cupon.Codigo</strong>
+                                                    <small>@cupon.Descripcion</small>
+                                                    @if (cupon.FechaExpiracion.HasValue)
+                                                    {
+                                                        <span class="cupon-expira">Válido hasta: @cupon.FechaExpiracion.Value.ToString("dd/MM/yyyy")</span>
+                                                    }
+                                                </div>
+                                                <div class="cupon-accion">
+                                                    <button class="btn-usar">Usar</button>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
                     <div class="resumen-linea">
                         <span>Productos (@totalProductos)</span>
-                        <span>@total.ToString("C")</span>
+                        <span>@subtotal.ToString("C")</span>
                     </div>
+
+                    @if (descuentoCupon > 0)
+                    {
+                        <div class="resumen-linea descuento">
+                            <span>Descuento cupón</span>
+                            <span class="descuento-valor">-@descuentoCupon.ToString("C")</span>
+                        </div>
+                    }
 
                     <div class="resumen-linea">
                         <span>Envío</span>
@@ -231,13 +332,20 @@
                         <span>@total.ToString("C")</span>
                     </div>
 
+                    @if (descuentoCupon > 0)
+                    {
+                        <div class="ahorro-total">
+                            <span>💰 ¡Ahorras @descuentoCupon.ToString("C")!</span>
+                        </div>
+                    }
+
                     <div class="resumen-productos-lista">
                         <h4>@totalProductos productos</h4>
                         @foreach (var item in items)
                         {
                             <div class="producto-resumen">
                                 <span>@item.NombreArticulo</span>
-                                <span>@item.Cantidad</span>
+                                <span>x@item.Cantidad</span>
                             </div>
                         }
                     </div>
@@ -247,10 +355,286 @@
     }
 </div>
 
+<style>
+    /* Estilos para la sección de cupones */
+    .cupon-section {
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .cupon-input-group {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .cupon-input {
+        flex: 1;
+        padding: 10px 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 14px;
+        text-transform: uppercase;
+        transition: all 0.2s ease;
+    }
+
+        .cupon-input:focus {
+            outline: none;
+            border-color: #a855f7;
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+        }
+
+        .cupon-input:disabled {
+            background: #f3f4f6;
+            cursor: not-allowed;
+        }
+
+    .btn-aplicar-cupon {
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+
+        .btn-aplicar-cupon:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+        }
+
+        .btn-aplicar-cupon:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+    .cupon-aplicado {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px;
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        border-radius: 8px;
+        margin-bottom: 12px;
+    }
+
+    .cupon-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .cupon-icon {
+        font-size: 24px;
+    }
+
+    .cupon-detalles {
+        display: flex;
+        flex-direction: column;
+    }
+
+        .cupon-detalles strong {
+            color: #065f46;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .cupon-detalles small {
+            color: #047857;
+            font-size: 12px;
+        }
+
+    .btn-remover-cupon {
+        padding: 4px 8px;
+        background: #059669;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        transition: all 0.2s ease;
+    }
+
+        .btn-remover-cupon:hover {
+            background: #047857;
+        }
+
+    .cupon-mensaje {
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        margin-top: 8px;
+    }
+
+        .cupon-mensaje.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .cupon-mensaje.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+    .btn-toggle-cupones {
+        width: 100%;
+        padding: 10px;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        color: #6b7280;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        margin-top: 12px;
+    }
+
+        .btn-toggle-cupones:hover {
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+    .lista-cupones-disponibles {
+        margin-top: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .cupon-disponible {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+        .cupon-disponible:hover {
+            border-color: #a855f7;
+            box-shadow: 0 2px 8px rgba(168, 85, 247, 0.1);
+        }
+
+    .cupon-badge {
+        flex-shrink: 0;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+        border-radius: 8px;
+        color: white;
+        font-weight: bold;
+    }
+
+    .descuento-porcentaje,
+    .descuento-monto {
+        font-size: 16px;
+    }
+
+    .cupon-detalle {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+        .cupon-detalle strong {
+            font-size: 13px;
+            color: #1f2937;
+            font-family: 'Courier New', monospace;
+        }
+
+        .cupon-detalle small {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+    .cupon-expira {
+        font-size: 11px;
+        color: #9ca3af;
+        margin-top: 4px;
+    }
+
+    .btn-usar {
+        padding: 6px 16px;
+        background: #a855f7;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+        .btn-usar:hover {
+            background: #9333ea;
+        }
+
+    .resumen-linea.descuento {
+        color: #059669;
+        font-weight: 600;
+    }
+
+    .descuento-valor {
+        color: #059669;
+        font-weight: 700;
+    }
+
+    .ahorro-total {
+        text-align: center;
+        padding: 8px;
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        border-radius: 8px;
+        margin-top: 12px;
+    }
+
+        .ahorro-total span {
+            color: #065f46;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+    /* Scrollbar personalizado para lista de cupones */
+    .lista-cupones-disponibles::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .lista-cupones-disponibles::-webkit-scrollbar-track {
+        background: #f3f4f6;
+        border-radius: 3px;
+    }
+
+    .lista-cupones-disponibles::-webkit-scrollbar-thumb {
+        background: #a855f7;
+        border-radius: 3px;
+    }
+
+        .lista-cupones-disponibles::-webkit-scrollbar-thumb:hover {
+            background: #9333ea;
+        }
+</style>
+
 @code {
     private List<CarritoItemDTO> items = new();
     private List<MetodoPagoDTO> metodosPago = new();
+    private List<CuponDisponibleDTO> cuponesDisponibles = new();
     private int totalProductos = 0;
+    private decimal subtotal = 0;
+    private decimal descuentoCupon = 0;
     private decimal total = 0;
 
     private int pasoActual = 1;
@@ -263,6 +647,15 @@
 
     private int idUsuarioAutenticado = 0;
     private UsuarioConDireccionDTO? usuarioConDireccion;
+
+    // Variables para cupones
+    private string codigoCupon = "";
+    private bool validandoCupon = false;
+    private string? mensajeCupon;
+    private string mensajeCuponTipo = "";
+    private CuponDisponibleDTO? cuponAplicado;
+    private int? idCuponAplicado;
+    private bool mostrarCuponesDisponibles = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -281,6 +674,7 @@
 
         await CargarDireccionUsuario();
         await CargarMetodosPago();
+        await CargarCuponesDisponibles();
     }
 
     private async Task CargarDireccionUsuario()
@@ -309,7 +703,8 @@
     private void ActualizarTotales()
     {
         totalProductos = Carrito.ObtenerCantidadTotal();
-        total = Carrito.ObtenerTotal();
+        subtotal = Carrito.ObtenerTotal();
+        total = subtotal - descuentoCupon;
     }
 
     private async Task CargarMetodosPago()
@@ -338,6 +733,117 @@
         {
             cargandoMetodos = false;
         }
+    }
+
+    private async Task CargarCuponesDisponibles()
+    {
+        try
+        {
+            var response = await CuponService.ObtenerCuponesDisponibles(idUsuarioAutenticado);
+
+            if (response.IsSuccess && response.ListObject != null)
+            {
+                cuponesDisponibles = response.ListObject.ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar cupones disponibles: {ex.Message}");
+        }
+    }
+
+    private async Task ValidarYAplicarCupon()
+    {
+        if (string.IsNullOrWhiteSpace(codigoCupon))
+            return;
+
+        try
+        {
+            validandoCupon = true;
+            mensajeCupon = null;
+
+            var validacion = new ValidarCuponDTO
+            {
+                Codigo = codigoCupon.Trim().ToUpper(),
+                IdUsuario = idUsuarioAutenticado,
+                Subtotal = subtotal
+            };
+
+            var response = await CuponService.ValidarCupon(validacion);
+
+            if (response.IsSuccess && response.Object != null)
+            {
+                var resultado = response.Object;
+
+                if (resultado.EsValido)
+                {
+                    descuentoCupon = resultado.Descuento;
+                    idCuponAplicado = resultado.IdCupon;
+
+                    // Buscar el cupón en la lista de disponibles para mostrar detalles
+                    var cuponDetalle = cuponesDisponibles.FirstOrDefault(c => c.IdCupon == resultado.IdCupon);
+                    if (cuponDetalle != null)
+                    {
+                        cuponAplicado = cuponDetalle;
+                    }
+                    else
+                    {
+                        // Si no está en la lista, crear un objeto temporal
+                        cuponAplicado = new CuponDisponibleDTO
+                        {
+                            IdCupon = resultado.IdCupon,
+                            Codigo = validacion.Codigo,
+                            Descripcion = resultado.Mensaje
+                        };
+                    }
+
+                    ActualizarTotales();
+                    codigoCupon = "";
+                    mensajeCupon = null;
+                    mensajeCuponTipo = "";
+                }
+                else
+                {
+                    mensajeCupon = resultado.Mensaje;
+                    mensajeCuponTipo = "error";
+                }
+            }
+            else
+            {
+                mensajeCupon = response.Message ?? "Error al validar cupón";
+                mensajeCuponTipo = "error";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeCupon = $"Error: {ex.Message}";
+            mensajeCuponTipo = "error";
+        }
+        finally
+        {
+            validandoCupon = false;
+        }
+    }
+
+    private void AplicarCuponDirecto(string codigo)
+    {
+        codigoCupon = codigo;
+        ValidarYAplicarCupon();
+    }
+
+    private void RemoverCupon()
+    {
+        cuponAplicado = null;
+        idCuponAplicado = null;
+        descuentoCupon = 0;
+        codigoCupon = "";
+        mensajeCupon = null;
+        ActualizarTotales();
+    }
+
+    private void ToggleCuponesDisponibles()
+    {
+        mostrarCuponesDisponibles = !mostrarCuponesDisponibles;
     }
 
     private void SeleccionarMetodoPago(int idMetodo)
@@ -415,8 +921,24 @@
 
             if (response.IsSuccess)
             {
+                // Cambio aquí: response.Object es int, no int?
+                var idPedidoCreado = response.Object;
+
+                // Si hay un cupón aplicado, aplicarlo al pedido
+                if (idCuponAplicado.HasValue && cuponAplicado != null)
+                {
+                    var aplicarCupon = new AplicarCuponDTO
+                    {
+                        IdPedido = idPedidoCreado,
+                        CodigoCupon = cuponAplicado.Codigo,
+                        IdUsuario = idUsuarioAutenticado
+                    };
+
+                    await CuponService.AplicarCupon(aplicarCupon);
+                }
+
                 Carrito.Limpiar();
-                Navigation.NavigateTo($"/pedido-confirmado/{response.Object}");
+                Navigation.NavigateTo($"/pedido-confirmado/{idPedidoCreado}");
             }
             else
             {
@@ -432,7 +954,6 @@
             procesandoPedido = false;
         }
     }
-
 
     private void VolverAlCarrito()
     {

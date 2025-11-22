@@ -40,8 +40,16 @@ namespace DAL.Implementaciones
                         command.Parameters.Add("p_valor_descuento", OracleDbType.Decimal).Value = cupon.ValorDescuento;
                         command.Parameters.Add("p_usos_maximos", OracleDbType.Int32).Value =
                             cupon.UsosMaximos.HasValue ? (object)cupon.UsosMaximos.Value : DBNull.Value;
+
+                        // ⬅️ NORMALIZAR FECHA DE INICIO - Solo la parte de fecha, sin hora
+                        DateTime? fechaInicio = cupon.FechaInicio?.Date; // .Date elimina la parte de hora
+                        command.Parameters.Add("p_fecha_inicio", OracleDbType.Date).Value =
+                            fechaInicio.HasValue ? (object)fechaInicio.Value : DBNull.Value;
+
+                        // ⬅️ NORMALIZAR FECHA DE EXPIRACIÓN
+                        DateTime? fechaExpiracion = cupon.FechaExpiracion?.Date;
                         command.Parameters.Add("p_fecha_expiracion", OracleDbType.Date).Value =
-                            cupon.FechaExpiracion.HasValue ? (object)cupon.FechaExpiracion.Value : DBNull.Value;
+                            fechaExpiracion.HasValue ? (object)fechaExpiracion.Value : DBNull.Value;
 
                         var idParam = new OracleParameter("p_id_cupon_out", OracleDbType.Int32, ParameterDirection.Output);
                         command.Parameters.Add(idParam);

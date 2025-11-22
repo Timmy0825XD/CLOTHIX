@@ -1,0 +1,1335 @@
+﻿@page "/AdminCupones"
+@using ENTITY.Cupones
+@using ENTITY.Utilidades
+@using BLL.Interfaces
+@inject ICuponService CuponService
+@inject IJSRuntime JS
+
+<div class="container">
+    <div class="header-section">
+        <h2 class="page-title">Gestión de Cupones de Descuento</h2>
+        <button class="btn-secondary" @onclick="MostrarModalCrear">
+            <span class="icon"><Icon Name="IconName.Add" /></span>
+            Crear Cupón
+        </button>
+    </div>
+
+    @if (cargando)
+    {
+        <div class="loading-container">
+            <div class="spinner"></div>
+            <p>Cargando cupones...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(mensajeError))
+    {
+        <div class="error-message">
+            <span class="error-icon"><Icon Name="IconName.Alert" /></span>
+            <span>@mensajeError</span>
+            <button class="btn-retry" @onclick="CargarCupones">Reintentar</button>
+        </div>
+    }
+    else
+    {
+        <div class="content-card">
+            <div class="stats-row">
+                <div class="stat-card stat-total">
+                    <span class="stat-icon"><Icon Name="IconName.Dashboard" /></span>
+                    <div class="stat-info">
+                        <span class="stat-label">Total Cupones</span>
+                        <span class="stat-value">@cupones.Count</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-aprobadas">
+                    <span class="stat-icon"><Icon Name="IconName.Check" /></span>
+                    <div class="stat-info">
+                        <span class="stat-label">Activos</span>
+                        <span class="stat-value">@cupones.Count(c => c.Estado == 'A')</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-pendientes">
+                    <span class="stat-icon"><Icon Name="IconName.TimesCircle" /></span>
+                    <div class="stat-info">
+                        <span class="stat-label">Inactivos</span>
+                        <span class="stat-value">@cupones.Count(c => c.Estado == 'I')</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filters-row">
+                <div class="search-box">
+                    <input type="text"
+                           placeholder="Buscar por código o descripción..."
+                           class="search-input"
+                           @bind="searchTerm"
+                           @bind:event="oninput" />
+                </div>
+                <div class="filter-group">
+                    <select class="filter-select" @bind="filterEstado">
+                        <option value="">Todos los estados</option>
+                        <option value="A">Activos</option>
+                        <option value="I">Inactivos</option>
+                    </select>
+                    <select class="filter-select" @bind="filterTipo">
+                        <option value="">Todos los tipos</option>
+                        <option value="PORCENTAJE">Porcentaje</option>
+                        <option value="MONTO">Monto Fijo</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Código</th>
+                            <th>Descripción</th>
+                            <th>Tipo</th>
+                            <th>Descuento</th>
+                            <th>Usos</th>
+                            <th>Fecha Inicio</th>
+                            <th>Fecha Expiración</th>
+                            <th>Estado</th>
+                            <th>Bienvenida</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (CuponesFiltrados.Any())
+                        {
+                            @foreach (var cupon in CuponesFiltrados)
+                            {
+                                <tr class="table-row">
+                                    <td class="invoice-id">#@cupon.IdCupon</td>
+                                    <td class="coupon-code">
+                                        <span class="code-badge">@cupon.Codigo</span>
+                                    </td>
+                                    <td class="coupon-description" title="@cupon.Descripcion">@cupon.Descripcion</td>
+                                    <td>
+                                        <span class="type-badge @(cupon.TipoDescuento == "PORCENTAJE" ? "type-percentage" : "type-amount")">
+                                            @cupon.TipoDescuento
+                                        </span>
+                                    </td>
+                                    <td class="discount-value">
+                                        @if (cupon.TipoDescuento == "PORCENTAJE")
+                                        {
+                                            <span class="discount-percentage">@cupon.ValorDescuento%</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="discount-amount">$@cupon.ValorDescuento.ToString("N2")</span>
+                                        }
+                                    </td>
+                                    <td class="usage-info">
+                                        <span class="usage-text">
+                                            @cupon.UsosActuales / @(cupon.UsosMaximos?.ToString() ?? "∞")
+                                        </span>
+                                        @if (cupon.UsosMaximos.HasValue && cupon.UsosMaximos.Value > 0)
+                                        {
+                                            var porcentaje = Math.Min((cupon.UsosActuales * 100.0) / cupon.UsosMaximos.Value, 100);
+                                            <div class="usage-bar">
+                                                <div class="usage-fill" style="width: @porcentaje%"></div>
+                                            </div>
+                                        }
+                                    </td>
+                                    <td class="invoice-date">@cupon.FechaInicio.ToString("dd/MM/yyyy")</td>
+                                    <td class="invoice-date">
+                                        @if (cupon.FechaExpiracion.HasValue)
+                                        {
+                                            @cupon.FechaExpiracion.Value.ToString("dd/MM/yyyy")
+                                            @if (cupon.FechaExpiracion.Value < DateTime.Now)
+                                            {
+                                                <span class="expired-label">Expirado</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Sin expiración</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="status-badge @(cupon.Estado == 'A' ? "aprobada" : "rechazada")">
+                                            @(cupon.Estado == 'A' ? "Activo" : "Inactivo")
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (cupon.EsBienvenida == 'S')
+                                        {
+                                            <span class="welcome-badge" title="Cupón de bienvenida">🎁</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action btn-dian"
+                                                    @onclick="() => VerHistorial(cupon.IdCupon)"
+                                                    title="Ver historial">
+                                                <span><Icon Name="IconName.List" /></span>
+                                            </button>
+                                            <button class="btn-action btn-copy"
+                                                    @onclick="() => CopiarCodigo(cupon.Codigo)"
+                                                    title="Copiar código">
+                                                <span><Icon Name="IconName.File" /></span>
+                                            </button>
+                                            @if (cupon.Estado == 'A')
+                                            {
+                                                <button class="btn-action btn-delete"
+                                                        @onclick="() => DesactivarCuponConfirm(cupon.IdCupon)"
+                                                        title="Desactivar">
+                                                    <span><Icon Name="IconName.Ban" /></span>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (!CuponesFiltrados.Any())
+            {
+                <div class="empty-state">
+                    <span class="empty-icon">🎟️</span>
+                    <p>No se encontraron cupones con los filtros aplicados</p>
+                    @if (!string.IsNullOrEmpty(searchTerm) || !string.IsNullOrEmpty(filterEstado) || !string.IsNullOrEmpty(filterTipo))
+                    {
+                        <button class="btn-clear-filters" @onclick="LimpiarFiltros">Limpiar filtros</button>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    @if (mostrarModalCrear)
+    {
+        <div class="modal-overlay" @onclick="CerrarModal">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <div class="modal-header">
+                    <h3>Crear Nuevo Cupón</h3>
+                    <button class="btn-close" @onclick="CerrarModal">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Código del Cupón *</label>
+                        <input type="text" class="form-input" @bind="nuevoCupon.Codigo" placeholder="Ej: VERANO2024" maxlength="20" />
+                        <small class="form-hint">Entre 3 y 20 caracteres</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción *</label>
+                        <textarea class="form-input" @bind="nuevoCupon.Descripcion" placeholder="Describe el cupón..." rows="3"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Tipo de Descuento *</label>
+                            <select class="form-input" @bind="nuevoCupon.TipoDescuento">
+                                <option value="PORCENTAJE">Porcentaje (%)</option>
+                                <option value="MONTO">Monto Fijo ($)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Valor del Descuento *</label>
+                            <input type="number" class="form-input" @bind="nuevoCupon.ValorDescuento"
+                                   placeholder="@(nuevoCupon.TipoDescuento == "PORCENTAJE" ? "Ej: 20" : "Ej: 50000")" step="0.01" min="0" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Usos Máximos</label>
+                            <input type="number" class="form-input" @bind="nuevoCupon.UsosMaximos" placeholder="Dejar vacío para ilimitado" min="1" />
+                            <small class="form-hint">Opcional: limita cuántas veces se puede usar</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Fecha de Inicio</label>
+                            <input type="date"
+                                   class="form-input"
+                                   @bind="nuevoCupon.FechaInicio"
+                                   min="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                            <small class="form-hint">Opcional: desde cuándo es válido (por defecto: hoy)</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Fecha de Expiración</label>
+                            <input type="date" class="form-input" @bind="nuevoCupon.FechaExpiracion" min="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                            <small class="form-hint">Opcional: fecha límite de uso</small>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" @bind="enviarEmailMasivo" />
+                            <span>Enviar email masivo a todos los usuarios registrados</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" @onclick="CerrarModal">Cancelar</button>
+                    <button class="btn-primary" @onclick="CrearCupon">Crear Cupón</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (mostrarModalHistorial && cuponSeleccionado.HasValue)
+    {
+        <div class="modal-overlay" @onclick="CerrarModalHistorial">
+            <div class="modal-content modal-large" @onclick:stopPropagation="true">
+                <div class="modal-header">
+                    <h3>Historial de Uso del Cupón</h3>
+                    <button class="btn-close" @onclick="CerrarModalHistorial">✕</button>
+                </div>
+                <div class="modal-body">
+                    @if (cargandoHistorial)
+                    {
+                        <div class="loading-container">
+                            <div class="spinner"></div>
+                            <p>Cargando historial...</p>
+                        </div>
+                    }
+                    else if (historialUso.Any())
+                    {
+                        <div class="historial-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Total de Usos</span>
+                                <span class="stat-value">@historialUso.Count</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Descuento Total Aplicado</span>
+                                <span class="stat-value">$@historialUso.Sum(h => h.DescuentoAplicado).ToString("N2")</span>
+                            </div>
+                        </div>
+                        <div class="historial-table">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID Pedido</th>
+                                        <th>Número Pedido</th>
+                                        <th>Usuario</th>
+                                        <th>Email</th>
+                                        <th>Descuento</th>
+                                        <th>Fecha Uso</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var uso in historialUso)
+                                    {
+                                        <tr class="table-row">
+                                            <td class="invoice-id">#@uso.IdPedido</td>
+                                            <td class="invoice-number">@uso.NumeroPedido</td>
+                                            <td>@uso.NombreUsuario</td>
+                                            <td class="user-email">@uso.CorreoUsuario</td>
+                                            <td class="discount-amount">$@uso.DescuentoAplicado.ToString("N2")</td>
+                                            <td class="invoice-date">@uso.FechaUso.ToString("dd/MM/yyyy HH:mm")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <span class="empty-icon">📋</span>
+                            <p>Este cupón aún no ha sido utilizado</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (mostrarMensaje)
+    {
+        <div class="toast-notification @tipoMensaje">
+            <span>@(tipoMensaje == "success" ? "✅" : tipoMensaje == "error" ? "❌" : "ℹ️")</span>
+            <span>@textoMensaje</span>
+        </div>
+    }
+</div>
+
+<style>
+    /* === ESTILOS BASE (de AdminFacturas) === */
+    .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .page-title {
+        font-size: 28px;
+        font-weight: bold;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .btn-secondary {
+        padding: 12px 24px;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+        .btn-secondary:hover {
+            background: #f9fafb;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid #f3f4f6;
+        border-top: 4px solid #a855f7;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .error-message {
+        background: #fee2e2;
+        border: 1px solid #fecaca;
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #991b1b;
+    }
+
+    .error-icon {
+        font-size: 24px;
+    }
+
+    .btn-retry {
+        margin-left: auto;
+        padding: 8px 16px;
+        background: #dc2626;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+        .btn-retry:hover {
+            background: #b91c1c;
+        }
+
+    .content-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 24px;
+    }
+
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        border-left: 4px solid;
+        transition: all 0.2s ease;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+    .stat-total {
+        border-color: #a855f7;
+    }
+
+    .stat-aprobadas {
+        border-color: #10b981;
+    }
+
+    .stat-pendientes {
+        border-color: #f59e0b;
+    }
+
+    .stat-icon {
+        font-size: 32px;
+    }
+
+    .stat-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #6b7280;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #1f2937;
+    }
+
+    .filters-row {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+
+    .search-box {
+        flex: 1;
+        min-width: 250px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #a855f7;
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+        }
+
+    .filter-group {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .filter-select {
+        padding: 12px 16px;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        font-size: 14px;
+        cursor: pointer;
+        background: white;
+        transition: all 0.2s ease;
+    }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #a855f7;
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+        }
+
+    .table-wrapper {
+        overflow-x: auto;
+        margin-bottom: 16px;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 1200px;
+    }
+
+        .data-table thead tr {
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 12px;
+            color: #6b7280;
+            font-weight: 600;
+            font-size: 13px;
+            white-space: nowrap;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+    .table-row {
+        border-bottom: 1px solid #e5e7eb;
+        transition: background-color 0.2s ease;
+    }
+
+        .table-row:hover {
+            background-color: #f9fafb;
+        }
+
+        .table-row td {
+            padding: 16px 12px;
+            font-size: 14px;
+        }
+
+    .invoice-id {
+        font-weight: 700;
+        color: #a855f7;
+    }
+
+    .invoice-number {
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .invoice-date {
+        color: #6b7280;
+        font-size: 13px;
+    }
+
+    .text-muted {
+        color: #9ca3af;
+        font-style: italic;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+        .status-badge.aprobada {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.rechazada {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+    .action-buttons {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .btn-action {
+        padding: 8px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 16px;
+    }
+
+        .btn-action:hover {
+            transform: translateY(-1px);
+        }
+
+    .btn-dian {
+        background: #e0e7ff;
+        color: #4338ca;
+    }
+
+        .btn-dian:hover {
+            background: #c7d2fe;
+        }
+
+    .btn-copy {
+        background: #dbeafe;
+        color: #2563eb;
+    }
+
+        .btn-copy:hover {
+            background: #bfdbfe;
+        }
+
+    .btn-delete {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+        .btn-delete:hover {
+            background: #fecaca;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 48px 24px;
+        color: #9ca3af;
+    }
+
+    .empty-icon {
+        font-size: 48px;
+        display: block;
+        margin-bottom: 16px;
+    }
+
+    .empty-state p {
+        margin: 0 0 16px 0;
+        font-size: 16px;
+    }
+
+    .btn-clear-filters {
+        padding: 10px 20px;
+        background: #a855f7;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+        .btn-clear-filters:hover {
+            background: #9333ea;
+            transform: translateY(-1px);
+        }
+
+    .toast-notification {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        color: white;
+        padding: 16px 24px;
+        border-radius: 12px;
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 500;
+        animation: slideIn 0.3s ease;
+        z-index: 1000;
+        min-width: 300px;
+    }
+
+        .toast-notification.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .toast-notification.error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .toast-notification.info {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+
+    @@keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    /* === ESTILOS ESPECÍFICOS DE CUPONES === */
+    .coupon-code {
+        font-weight: 600;
+    }
+
+    .code-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+        font-weight: bold;
+        letter-spacing: 1px;
+        display: inline-block;
+    }
+
+    .coupon-description {
+        color: #6b7280;
+        max-width: 250px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .type-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .type-percentage {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+
+    .type-amount {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+
+    .discount-value {
+        font-weight: 700;
+        font-size: 15px;
+    }
+
+    .discount-percentage {
+        color: #2563eb;
+    }
+
+    .discount-amount {
+        color: #059669;
+    }
+
+    .usage-info {
+        min-width: 120px;
+    }
+
+    .usage-text {
+        font-size: 13px;
+        color: #6b7280;
+        font-weight: 500;
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .usage-bar {
+        width: 100%;
+        height: 4px;
+        background: #e5e7eb;
+        border-radius: 2px;
+        overflow: hidden;
+    }
+
+    .usage-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+        transition: width 0.3s ease;
+    }
+
+    .expired-label {
+        display: block;
+        font-size: 10px;
+        color: #ef4444;
+        font-weight: 600;
+        margin-top: 2px;
+    }
+
+    .welcome-badge {
+        font-size: 20px;
+        cursor: help;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    /* === MODALES === */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        animation: fadeIn 0.2s ease;
+        padding: 20px;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        animation: slideUp 0.3s ease;
+    }
+
+    .modal-large {
+        max-width: 900px;
+    }
+
+    .modal-header {
+        padding: 24px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 10;
+    }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+    .btn-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: #9ca3af;
+        cursor: pointer;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+        .btn-close:hover {
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+    .form-input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        font-family: inherit;
+    }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #a855f7;
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+        }
+
+    textarea.form-input {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .form-hint {
+        display: block;
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 4px;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        color: #374151;
+    }
+
+        .checkbox-label input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #a855f7;
+        }
+
+    .modal-footer {
+        padding: 20px 24px;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        position: sticky;
+        bottom: 0;
+        background: white;
+    }
+
+    .btn-cancel {
+        padding: 10px 20px;
+        border: 1px solid #e5e7eb;
+        background: white;
+        color: #6b7280;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+        .btn-cancel:hover {
+            background: #f9fafb;
+        }
+
+    .btn-primary {
+        padding: 10px 20px;
+        border: none;
+        background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+        color: white;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+    .historial-table {
+        overflow-x: auto;
+    }
+
+    .historial-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+        padding: 20px;
+        background: #f9fafb;
+        border-radius: 12px;
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+        .stat-item .stat-label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .stat-item .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+    .user-email {
+        color: #6b7280;
+        font-size: 13px;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    @@keyframes slideUp {
+        from {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .filters-row {
+            flex-direction: column;
+        }
+
+        .filter-group {
+            width: 100%;
+        }
+
+        .filter-select {
+            flex: 1;
+        }
+
+        .stats-row {
+            grid-template-columns: 1fr;
+        }
+
+        .modal-content {
+            max-width: 100%;
+            margin: 0;
+        }
+    }
+</style>
+
+@code {
+    private List<CuponDTO> cupones = new();
+    private string searchTerm = "";
+    private string filterEstado = "";
+    private string filterTipo = "";
+    private bool cargando = true;
+    private string? mensajeError = null;
+    private bool mostrarMensaje = false;
+    private string textoMensaje = "";
+    private string tipoMensaje = "success";
+    private bool mostrarModalCrear = false;
+    private bool mostrarModalHistorial = false;
+    private bool cargandoHistorial = false;
+    private int? cuponSeleccionado = null;
+    private List<HistorialUsoCuponDTO> historialUso = new();
+    private CrearCuponDTO nuevoCupon = new();
+    private bool enviarEmailMasivo = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarCupones();
+    }
+
+    private async Task CargarCupones()
+    {
+        try
+        {
+            cargando = true;
+            mensajeError = null;
+            StateHasChanged();
+
+            var response = await CuponService.ObtenerTodosCupones();
+
+            if (response.IsSuccess)
+            {
+                cupones = response.ListObject?.ToList() ?? new List<CuponDTO>();
+
+                if (!cupones.Any())
+                {
+                    MostrarNotificacion("No hay cupones registrados en el sistema", "info");
+                }
+            }
+            else
+            {
+                mensajeError = response.Message ?? "Error al cargar los cupones";
+                MostrarNotificacion(mensajeError, "error");
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"Error inesperado: {ex.Message}";
+            MostrarNotificacion(mensajeError, "error");
+        }
+        finally
+        {
+            cargando = false;
+            StateHasChanged();
+        }
+    }
+
+    private IEnumerable<CuponDTO> CuponesFiltrados
+    {
+        get
+        {
+            var resultado = cupones.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                resultado = resultado.Where(c =>
+                    c.Codigo.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    c.Descripcion.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+                );
+            }
+
+            if (!string.IsNullOrWhiteSpace(filterEstado))
+            {
+                resultado = resultado.Where(c => c.Estado.ToString() == filterEstado);
+            }
+
+            if (!string.IsNullOrWhiteSpace(filterTipo))
+            {
+                resultado = resultado.Where(c => c.TipoDescuento == filterTipo);
+            }
+
+            return resultado.OrderByDescending(c => c.FechaCreacion);
+        }
+    }
+
+    private void MostrarModalCrear()
+    {
+        nuevoCupon = new CrearCuponDTO { TipoDescuento = "PORCENTAJE" };
+        enviarEmailMasivo = false;
+        mostrarModalCrear = true;
+    }
+
+    private void CerrarModal()
+    {
+        mostrarModalCrear = false;
+    }
+
+    private async Task CrearCupon()
+    {
+        var response = await CuponService.CrearCupon(nuevoCupon, enviarEmailMasivo);
+
+        if (response.IsSuccess)
+        {
+            MostrarNotificacion("Cupón creado exitosamente", "success");
+            CerrarModal();
+            await CargarCupones();
+        }
+        else
+        {
+            MostrarNotificacion(response.Message ?? "Error al crear cupón", "error");
+        }
+    }
+
+    private async Task VerHistorial(int idCupon)
+    {
+        cuponSeleccionado = idCupon;
+        mostrarModalHistorial = true;
+        cargandoHistorial = true;
+        historialUso.Clear();
+        StateHasChanged();
+
+        var response = await CuponService.ObtenerHistorialUso(idCupon);
+
+        if (response.IsSuccess)
+        {
+            historialUso = response.ListObject?.ToList() ?? new List<HistorialUsoCuponDTO>();
+        }
+        else
+        {
+            MostrarNotificacion(response.Message ?? "Error al cargar historial", "error");
+        }
+
+        cargandoHistorial = false;
+        StateHasChanged();
+    }
+
+    private void CerrarModalHistorial()
+    {
+        mostrarModalHistorial = false;
+        cuponSeleccionado = null;
+        historialUso.Clear();
+    }
+
+    private async Task CopiarCodigo(string codigo)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", codigo);
+            MostrarNotificacion("Código copiado al portapapeles", "success");
+        }
+        catch (Exception)
+        {
+            MostrarNotificacion("Error al copiar código", "error");
+        }
+    }
+
+    private async Task DesactivarCuponConfirm(int idCupon)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "¿Está seguro de desactivar este cupón?");
+
+        if (confirmed)
+        {
+            var response = await CuponService.DesactivarCupon(idCupon);
+
+            if (response.IsSuccess)
+            {
+                MostrarNotificacion("Cupón desactivado exitosamente", "success");
+                await CargarCupones();
+            }
+            else
+            {
+                MostrarNotificacion(response.Message ?? "Error al desactivar cupón", "error");
+            }
+        }
+    }
+
+    private void LimpiarFiltros()
+    {
+        searchTerm = "";
+        filterEstado = "";
+        filterTipo = "";
+        StateHasChanged();
+    }
+
+    private void MostrarNotificacion(string mensaje, string tipo = "success")
+    {
+        textoMensaje = mensaje;
+        tipoMensaje = tipo;
+        mostrarMensaje = true;
+        StateHasChanged();
+
+        Task.Delay(3000).ContinueWith(_ =>
+        {
+            mostrarMensaje = false;
+            InvokeAsync(StateHasChanged);
+        });
+    }
+}

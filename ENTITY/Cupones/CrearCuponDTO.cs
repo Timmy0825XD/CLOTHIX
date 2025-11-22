@@ -13,6 +13,7 @@ namespace ENTITY.Cupones
         public string TipoDescuento { get; set; } = "PORCENTAJE"; // PORCENTAJE o MONTO
         public decimal ValorDescuento { get; set; }
         public int? UsosMaximos { get; set; } // null = ilimitado
+        public DateTime? FechaInicio { get; set; }
         public DateTime? FechaExpiracion { get; set; } // null = sin expiración
     }
 }
