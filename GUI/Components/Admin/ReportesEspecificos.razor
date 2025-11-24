@@ -639,9 +639,9 @@
                 // Columna 1
                 row.RelativeItem().Column(col =>
                 {
-                    ComposeIndicador(col, "Total Ventas", $"${resumenFinanciero.TotalVentas:N2}");
+                    ComposeIndicador(col, "Total Ventas", $"${resumenFinanciero.TotalVentas:N2}", "#10b981");
                     col.Item().PaddingTop(8);
-                    ComposeIndicador(col, "Ingresos Netos", $"${resumenFinanciero.IngresosNetos:N2}");
+                    ComposeIndicador(col, "Ingresos Netos", $"${resumenFinanciero.IngresosNetos:N2}", "#3b82f6");
                 });
 
                 // Columna 2
