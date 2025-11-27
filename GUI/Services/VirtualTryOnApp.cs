@@ -3,7 +3,6 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
-
 namespace GUI.Services
 {
     public class VirtualTryOnApp
@@ -25,9 +24,9 @@ namespace GUI.Services
 
         public enum GarmentType
         {
-            Upper,
-            Lower,
-            Dress
+            Upper,    // Camisas, blusas, tops (Fashn: "tops")
+            Lower,    // Pantalones, faldas (Fashn: "bottoms")
+            Dress     // Vestidos, monos (Fashn: "one-pieces")
         }
 
         public class GarmentTypeInfo
@@ -36,6 +35,7 @@ namespace GUI.Services
             public List<string> Examples { get; set; }
             public string Recommendation { get; set; }
             public string Tip { get; set; }
+            public string FashnCategory { get; set; }
         }
 
         public class VirtualTryOnService
@@ -91,17 +91,18 @@ namespace GUI.Services
             }
 
             /// <summary>
-            /// Procesa el virtual try-on
+            /// Procesa el virtual try-on con archivos subidos (modo original)
+            /// Compatible con Fashn API v1.6
             /// </summary>
             /// <param name="personImageStream">Stream de la imagen de la persona</param>
             /// <param name="personFileName">Nombre del archivo de la persona</param>
             /// <param name="garmentImageStream">Stream de la imagen de la prenda</param>
             /// <param name="garmentFileName">Nombre del archivo de la prenda</param>
             /// <param name="garmentType">Tipo de prenda (upper, lower, dress)</param>
-            /// <param name="denoiseSteps">Pasos de denoise (20-40, default: 30)</param>
-            /// <param name="seed">Seed para reproducibilidad (default: 42)</param
-            /// <param name="autoCrop">Auto-crop (default: false)</param>
-            /// <param name="autoMask">Auto-mask (default: true, crítico para pantalones)</param>
+            /// <param name="denoiseSteps">Pasos de denoise (20-40, default: 30) - NO usado en Fashn v1.6</param>
+            /// <param name="seed">Seed para reproducibilidad (default: 42)</param>
+            /// <param name="autoCrop">Auto-crop (default: false) - NO usado en Fashn v1.6</param>
+            /// <param name="autoMask">Auto-mask (default: true) - NO usado en Fashn v1.6</param>
             /// <returns>Byte array de la imagen resultante</returns>
             public async Task<byte[]> ProcessTryOnAsync(
                 Stream personImageStream,
@@ -127,11 +128,7 @@ namespace GUI.Services
                     content.Add(garmentContent, "garment_image", garmentFileName);
 
                     content.Add(new StringContent(GarmentTypeToString(garmentType)), "garment_type");
-
-                    content.Add(new StringContent(denoiseSteps.ToString()), "denoise_steps");
                     content.Add(new StringContent(seed.ToString()), "seed");
-                    content.Add(new StringContent(autoCrop.ToString().ToLower()), "auto_crop");
-                    content.Add(new StringContent(autoMask.ToString().ToLower()), "auto_mask");
 
                     var response = await _httpClient.PostAsync($"{_apiBaseUrl}/tryon", content);
 
@@ -152,35 +149,118 @@ namespace GUI.Services
                 }
             }
 
-            public async Task<byte[]> GetResultImageAsync(string filename)
+            /// <summary>
+            /// Procesa el virtual try-on usando URLs de imágenes (para usar con catálogo)
+            /// Compatible con Fashn API v1.6
+            /// </summary>
+            /// <param name="personImageUrl">URL de la imagen de la persona</param>
+            /// <param name="garmentImageUrl">URL de la imagen de la prenda (del catálogo)</param>
+            /// <param name="garmentType">Tipo de prenda</param>
+            /// <param name="denoiseSteps">NO usado en Fashn v1.6</param>
+            /// <param name="seed">Seed para reproducibilidad</param>
+            /// <param name="autoCrop">NO usado en Fashn v1.6</param>
+            /// <param name="autoMask">NO usado en Fashn v1.6</param>
+            /// <returns>Byte array de la imagen resultante</returns>
+            public async Task<byte[]> ProcessTryOnFromUrlsAsync(
+                string personImageUrl,
+                string garmentImageUrl,
+                GarmentType garmentType = GarmentType.Upper,
+                int denoiseSteps = 30,
+                int seed = 42,
+                bool autoCrop = false,
+                bool autoMask = true)
             {
                 try
                 {
-                    var response = await _httpClient.GetAsync($"{_apiBaseUrl}/result/{filename}");
-                    response.EnsureSuccessStatusCode();
+                    using var content = new MultipartFormDataContent();
 
-                    return await response.Content.ReadAsByteArrayAsync();
+                    content.Add(new StringContent(personImageUrl), "person_image_url");
+                    content.Add(new StringContent(garmentImageUrl), "garment_image_url");
+                    content.Add(new StringContent(GarmentTypeToString(garmentType)), "garment_type");
+                    content.Add(new StringContent(seed.ToString()), "seed");
+
+                    var response = await _httpClient.PostAsync($"{_apiBaseUrl}/tryon", content);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return await response.Content.ReadAsByteArrayAsync();
+                    }
+                    else
+                    {
+                        var errorContent = await response.Content.ReadAsStringAsync();
+                        throw new Exception($"Error del servidor: {response.StatusCode} - {errorContent}");
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error obteniendo resultado: {ex.Message}");
+                    Console.WriteLine($"Error en ProcessTryOnFromUrlsAsync: {ex.Message}");
                     throw;
                 }
             }
 
-            public async Task<bool> DeleteResultAsync(string filename)
+            /// <summary>
+            /// Procesa el virtual try-on en modo mixto: archivo para persona, URL para prenda del catálogo
+            /// Este es el método principal para usar con el catálogo
+            /// Compatible con Fashn API v1.6
+            /// </summary>
+            /// <param name="personImageStream">Stream de la imagen de la persona (archivo subido)</param>
+            /// <param name="personFileName">Nombre del archivo de la persona</param>
+            /// <param name="garmentImageUrl">URL de la imagen de la prenda del catálogo</param>
+            /// <param name="garmentType">Tipo de prenda</param>
+            /// <param name="denoiseSteps">NO usado en Fashn v1.6</param>
+            /// <param name="seed">Seed para reproducibilidad</param>
+            /// <param name="autoCrop">NO usado en Fashn v1.6</param>
+            /// <param name="autoMask">NO usado en Fashn v1.6</param>
+            /// <returns>Byte array de la imagen resultante</returns>
+            public async Task<byte[]> ProcessTryOnMixedAsync(
+                Stream personImageStream,
+                string personFileName,
+                string garmentImageUrl,
+                GarmentType garmentType = GarmentType.Upper,
+                int denoiseSteps = 30,
+                int seed = 42,
+                bool autoCrop = false,
+                bool autoMask = true)
             {
                 try
                 {
-                    var response = await _httpClient.DeleteAsync($"{_apiBaseUrl}/result/{filename}");
-                    return response.IsSuccessStatusCode;
+                    using var content = new MultipartFormDataContent();
+
+                    // Agregar imagen de persona (archivo)
+                    var personContent = new StreamContent(personImageStream);
+                    personContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+                    content.Add(personContent, "person_image", personFileName);
+
+                    // Agregar URL de prenda del catálogo
+                    content.Add(new StringContent(garmentImageUrl), "garment_image_url");
+
+                    // Agregar parámetros
+                    content.Add(new StringContent(GarmentTypeToString(garmentType)), "garment_type");
+                    content.Add(new StringContent(seed.ToString()), "seed");
+
+                    var response = await _httpClient.PostAsync($"{_apiBaseUrl}/tryon", content);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return await response.Content.ReadAsByteArrayAsync();
+                    }
+                    else
+                    {
+                        var errorContent = await response.Content.ReadAsStringAsync();
+                        throw new Exception($"Error del servidor: {response.StatusCode} - {errorContent}");
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error eliminando resultado: {ex.Message}");
-                    return false;
+                    Console.WriteLine($"Error en ProcessTryOnMixedAsync: {ex.Message}");
+                    throw;
                 }
             }
+
+            /// <summary>
+            /// Obtiene información detallada sobre los tipos de prendas soportadas
+            /// Actualizado para Fashn API v1.6
+            /// </summary>
             public Dictionary<GarmentType, GarmentTypeInfo> GetGarmentTypesInfo()
             {
                 return new Dictionary<GarmentType, GarmentTypeInfo>
@@ -190,9 +270,10 @@ namespace GUI.Services
                         new GarmentTypeInfo
                         {
                             Name = "Parte Superior",
-                            Examples = new List<string> { "Camisas", "Blusas", "T-shirts", "Suéteres", "Chaquetas" },
-                            Recommendation = "Foto de medio cuerpo o torso",
-                            Tip = "Funciona mejor con fotos de frente, brazos visibles"
+                            Examples = new List<string> { "Camisas", "Blusas", "T-shirts", "Suéteres", "Chaquetas", "Tops" },
+                            Recommendation = "Foto de medio cuerpo o torso visible",
+                            Tip = "Funciona mejor con fotos de frente, brazos ligeramente separados del cuerpo",
+                            FashnCategory = "tops"
                         }
                     },
                     {
@@ -200,22 +281,41 @@ namespace GUI.Services
                         new GarmentTypeInfo
                         {
                             Name = "Parte Inferior",
-                            Examples = new List<string> { "Pantalones", "Jeans", "Faldas", "Shorts" },
-                            Recommendation = " Foto de CUERPO COMPLETO requerida",
-                            Tip = "Requiere foto de cuerpo completo, piernas visibles y rectas. Auto-mask debe estar activado."
+                            Examples = new List<string> { "Pantalones", "Jeans", "Faldas", "Shorts", "Leggins" },
+                            Recommendation = "⚠️ Foto de CUERPO COMPLETO requerida",
+                            Tip = "IMPORTANTE: Requiere foto de cuerpo completo con piernas visibles y rectas. La persona debe estar de frente.",
+                            FashnCategory = "bottoms"
                         }
                     },
                     {
                         GarmentType.Dress,
                         new GarmentTypeInfo
                         {
-                            Name = "Vestido Completo",
-                            Examples = new List<string> { "Vestidos", "Monos", "Prendas de cuerpo entero" },
-                            Recommendation = " Foto de CUERPO COMPLETO requerida",
-                            Tip = "Requiere foto de cuerpo completo, preferiblemente de frente"
+                            Name = "Vestido / Conjunto Completo",
+                            Examples = new List<string> { "Vestidos", "Monos", "Jumpsuits", "Overoles", "Prendas de cuerpo entero" },
+                            Recommendation = "⚠️ Foto de CUERPO COMPLETO requerida",
+                            Tip = "Requiere foto de cuerpo completo, preferiblemente de frente con brazos ligeramente separados",
+                            FashnCategory = "one-pieces"
                         }
                     }
                 };
+            }
+
+            /// <summary>
+            /// Resetea las estadísticas del servidor
+            /// </summary>
+            public async Task<bool> ResetStatsAsync()
+            {
+                try
+                {
+                    var response = await _httpClient.DeleteAsync($"{_apiBaseUrl}/stats");
+                    return response.IsSuccessStatusCode;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error reseteando estadísticas: {ex.Message}");
+                    return false;
+                }
             }
         }
     }

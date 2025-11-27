@@ -1,7 +1,11 @@
 ﻿@page "/virtual-tryon"
 @using GUI.Components.Layout
 @using static GUI.Services.VirtualTryOnApp
-@inject VirtualTryOnService TryOnService
+@using DAL.Interfaces
+@using ENTITY.Articulos
+@using GUI.Services
+@inject VirtualTryOnApp.VirtualTryOnService TryOnService
+@inject IArticuloDAO ArticuloDAO
 @inject NavigationManager Navigation
 @layout ClienteLayout
 
@@ -12,35 +16,33 @@
     <div class="gradient-header">
         <div class="d-flex justify-content-between align-items-center flex-wrap">
             <div>
-                <h1 class="display-4 mb-2">Virtual Try-On v2.0</h1>
-                <p class="lead mb-0">Prueba prendas virtualmente usando IA</p>
+                <h1 class="display-4 mb-2">Probador Virtual </h1>
+                <p class="lead mb-0">Pruebate nuestro catalogo en linea!</p>
             </div>
             <div>
                 @if (!isApiHealthy)
                 {
                     <span class="health-indicator unhealthy">
-                        <span>API Desconectada</span>
+                        <span><i class="fa-solid fa-triangle-exclamation"></i> API Desconectada</span>
                     </span>
                 }
                 else
                 {
                     <span class="health-indicator healthy">
-                        <span>API v2.0 Conectada</span>
+                        <span><i class="fa-solid fa-check"></i> API v2.0 Conectada</span>
                     </span>
                 }
             </div>
         </div>
     </div>
 
-
     @if (!isApiHealthy)
     {
         <div class="alert alert-danger alert-custom mb-4" role="alert">
-            <strong> API no disponible</strong>
+            <strong><i class="fa-solid fa-triangle-exclamation"></i> API no disponible</strong>
             <p class="mb-0 mt-2">Asegúrate de que el servidor Python esté ejecutándose en http://localhost:8000</p>
         </div>
     }
-
 
     @if (stats != null)
     {
@@ -48,13 +50,13 @@
             <div class="col-md-3">
                 <div class="stat-card">
                     <h3 class="stat-number text-primary">@stats.Stats.Successful</h3>
-                    <div class="stat-label">Exitosas</div>
+                    <div class="stat-label"> Exitosas</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-card">
                     <h3 class="stat-number text-success">@stats.Stats.Good_Quality</h3>
-                    <div class="stat-label">Buena Calidad</div>
+                    <div class="stat-label"> Buena Calidad</div>
                 </div>
             </div>
             <div class="col-md-3">
@@ -80,10 +82,10 @@
                             <span class="text-muted fw-semibold">Procesadas por tipo:</span>
                             <div class="d-flex gap-4">
                                 <span class="badge-type bg-light">
-                                    <span>@(stats.Stats.By_Type.ContainsKey("upper") ? stats.Stats.By_Type["upper"] : 0) Superiores</span>
+                                    <span><i class="fa-solid fa-shirt"></i> @(stats.Stats.By_Type.ContainsKey("upper") ? stats.Stats.By_Type["upper"] : 0) Superiores</span>
                                 </span>
                                 <span class="badge-type bg-light">
-                                    <span>@(stats.Stats.By_Type.ContainsKey("lower") ? stats.Stats.By_Type["lower"] : 0) Inferiores</span>
+                                    <span>👖 @(stats.Stats.By_Type.ContainsKey("lower") ? stats.Stats.By_Type["lower"] : 0) Inferiores</span>
                                 </span>
                             </div>
                         </div>
@@ -93,44 +95,38 @@
         }
     }
 
-
     <div class="row g-3 mb-4">
         <div class="col-md-4">
             <div class="garment-type-card @(selectedGarmentType == GarmentType.Upper ? "selected" : "")"
                  @onclick="@(() => OnGarmentTypeChanged(GarmentType.Upper))">
-                <div class="garment-title">Parte Superior</div>
+                <div class="garment-title"><i class="fa-solid fa-shirt"></i> Parte Superior</div>
                 <div class="garment-subtitle">Camisas, blusas, tops</div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="garment-type-card @(selectedGarmentType == GarmentType.Lower ? "selected" : "")"
                  @onclick="@(() => OnGarmentTypeChanged(GarmentType.Lower))">
-                <div class="garment-title">Parte Inferior</div>
+                <div class="garment-title">👖 Parte Inferior</div>
                 <div class="garment-subtitle">Pantalones, jeans, faldas</div>
             </div>
         </div>
     </div>
 
-
     @if (selectedGarmentType == GarmentType.Lower || selectedGarmentType == GarmentType.Dress)
     {
         <div class="alert alert-warning-custom alert-custom mb-4" role="alert">
-            <strong>IMPORTANTE:</strong> Para @(selectedGarmentType == GarmentType.Lower ? "pantalones/faldas" : "vestidos"),
+            <strong><i class="fa-solid fa-triangle-exclamation"></i> IMPORTANTE:</strong> Para @(selectedGarmentType == GarmentType.Lower ? "pantalones/faldas" : "vestidos"),
             la foto de la persona DEBE ser de <strong>CUERPO COMPLETO</strong> con las piernas visibles.
         </div>
     }
 
-
     <div class="row g-4 mb-4">
         <div class="col-lg-6">
             <div class="upload-card">
-                <div class="upload-header person">Imagen de la Persona</div>
+                <div class="upload-header person"><i class="fa-solid fa-camera"></i> Imagen de la Persona</div>
                 <div class="card-body">
                     <div class="mb-3">
                         <InputFile OnChange="HandlePersonImageSelected" class="form-control" accept="image/*" />
-                        <small class="text-muted d-block mt-2">
-                            <strong>@GetPersonImageTip()</strong>
-                        </small>
                     </div>
 
                     <div class="image-preview">
@@ -141,6 +137,7 @@
                         else
                         {
                             <div class="empty-preview">
+                                <i class="fa-solid fa-user empty-preview-icon"></i>
                                 <p class="mb-0">No hay imagen seleccionada</p>
                                 <small class="text-muted">Sube una foto de la persona</small>
                             </div>
@@ -153,88 +150,147 @@
         <div class="col-lg-6">
             <div class="upload-card">
                 <div class="upload-header garment">
-                    Imagen de la Prenda
+                    <i class="fa-solid fa-shirt"></i> Imagen de la Prenda
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <InputFile OnChange="HandleGarmentImageSelected" class="form-control" accept="image/*" />
-                        <small class="text-muted d-block mt-2">
-                            <strong>Bien extendida, fondo blanco, sin arrugas</strong>
-                        </small>
-                    </div>
+                    <ul class="nav nav-tabs-custom mb-4" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link-custom @(modoSeleccionPrenda == "catalogo" ? "active" : "")"
+                                    @onclick='() => modoSeleccionPrenda = "catalogo"'
+                                    type="button">
+                                <i class="fa-solid fa-shop"></i> <span>Catálogo</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link-custom @(modoSeleccionPrenda == "subir" ? "active" : "")"
+                                    @onclick='() => modoSeleccionPrenda = "subir"'
+                                    type="button">
+                                <i class="fa-solid fa-file-arrow-up"></i> <span>Subir Imagen</span>
+                            </button>
+                        </li>
+                    </ul>
 
-                    <div class="image-preview">
-                        @if (!string.IsNullOrEmpty(garmentImagePreview))
-                        {
-                            <img src="@garmentImagePreview" class="img-fluid" alt="Prenda" />
-                        }
-                        else
-                        {
-                            <div class="empty-preview">
-                                <div class="empty-preview-icon"></div>
-                                <p class="mb-0">No hay imagen seleccionada</p>
-                                <small class="text-muted">Sube una foto de la prenda</small>
+                    @if (modoSeleccionPrenda == "catalogo")
+                    {
+                        <div class="catalog-section">
+                            <div class="search-box mb-3">
+                                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                                <input type="text" class="form-control ps-5" placeholder="Buscar por nombre o marca..."
+                                       @bind="busquedaCatalogo" @bind:event="oninput" />
+                                @if (!string.IsNullOrWhiteSpace(busquedaCatalogo))
+                                {
+                                    <button class="btn btn-sm btn-link clear-search" @onclick="() => busquedaCatalogo = string.Empty">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                }
                             </div>
-                        }
-                    </div>
+
+                            @if (isLoadingCatalog)
+                            {
+                                <div class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                    <p class="mt-3 text-muted">Cargando catálogo...</p>
+                                </div>
+                            }
+                            else if (articulosFiltrados.Any())
+                            {
+                                <div class="catalog-scroll-container">
+                                    <div class="catalog-grid-improved">
+                                        @foreach (var articulo in articulosFiltrados.Take(12))
+                                        {
+                                            <div class="catalog-card @(articuloSeleccionado?.IdArticulo == articulo.IdArticulo ? "selected" : "")"
+                                                 @onclick="() => SeleccionarArticulo(articulo)">
+                                                <div class="catalog-card-image">
+                                                    <img src="@GetImageUrl(articulo)" alt="@articulo.Nombre" />
+                                                    @if (articuloSeleccionado?.IdArticulo == articulo.IdArticulo)
+                                                    {
+                                                        <div class="selected-badge">
+                                                            <i class="fa-solid fa-check"></i>
+                                                        </div>
+                                                    }
+                                                </div>
+                                                <div class="catalog-card-body">
+                                                    <h6 class="catalog-card-title">@articulo.Nombre</h6>
+                                                    <p class="catalog-card-brand">@articulo.Marca</p>
+                                                    <span class="catalog-badge">@articulo.CategoriaTipo</span>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+
+                                <div class="catalog-counter">
+                                    <i class="fa-solid fa-box"></i>
+                                    Mostrando @Math.Min(12, articulosFiltrados.Count()) de @articulosFiltrados.Count() productos
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="empty-catalog">
+                                    <i class="fa-solid fa-box-open"></i>
+                                    <p>No se encontraron productos</p>
+                                    <small>Intenta con otra búsqueda</small>
+                                </div>
+                            }
+
+                            @if (articuloSeleccionado != null)
+                            {
+                                <div class="selection-preview">
+                                    <div class="selection-preview-header">
+                                        <span><i class="fa-solid fa-check-circle"></i> Producto Seleccionado</span>
+                                        <button class="btn btn-sm btn-link text-white" @onclick="() => SeleccionarArticulo(null!)">
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+                                    </div>
+                                    <div class="selection-preview-body">
+                                        <img src="@GetImageUrl(articuloSeleccionado)" alt="@articuloSeleccionado.Nombre" />
+                                        <div class="selection-info">
+                                            <h6>@articuloSeleccionado.Nombre</h6>
+                                            <p class="text-muted mb-1">@articuloSeleccionado.Marca</p>
+                                            <span class="catalog-badge">@articuloSeleccionado.CategoriaTipo</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="upload-section">
+                            <div class="upload-box">
+                                <InputFile OnChange="HandleGarmentImageSelected" class="d-none" accept="image/*" id="garmentUpload" />
+                                <label for="garmentUpload" class="upload-label">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                                    <span>Seleccionar imagen</span>
+                                    <small>o arrastra y suelta aquí</small>
+                                </label>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(garmentImagePreview) && articuloSeleccionado == null)
+                            {
+                                <div class="uploaded-preview">
+                                    <div class="uploaded-preview-header">
+                                        <span><i class="fa-solid fa-image"></i> Imagen Cargada</span>
+                                        <button class="btn btn-sm btn-link" @onclick="ClearGarmentImage">
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+                                    </div>
+                                    <img src="@garmentImagePreview" alt="Prenda" />
+                                </div>
+                            }
+                        </div>
+                    }
                 </div>
             </div>
         </div>
     </div>
-
-
-    <div class="accordion-card mb-4">
-        <div class="accordion-header" @onclick="ToggleAdvancedSettings">
-            <div class="d-flex justify-content-between align-items-center">
-                <span>Configuración Avanzada</span>
-                <span>@(showAdvancedSettings ? "▼" : "▶")</span>
-            </div>
-        </div>
-        @if (showAdvancedSettings)
-        {
-            <div class="card-body">
-                <div class="row g-4">
-                    <div class="col-md-3">
-                        <label class="form-label fw-semibold">Pasos de Denoise: @denoiseSteps</label>
-                        <input type="range" class="form-range" min="20" max="40" @bind="denoiseSteps" />
-                        <small class="text-muted">Más pasos = mejor calidad (más lento)</small>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-semibold">Seed:</label>
-                        <input type="number" class="form-control" @bind="seed" />
-                        <small class="text-muted">Para reproducibilidad</small>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-check mt-4 pt-2">
-                            <input type="checkbox" class="form-check-input" id="autoCrop" @bind="autoCrop" />
-                            <label class="form-check-label fw-semibold" for="autoCrop">
-                                Auto-crop
-                            </label>
-                            <small class="text-muted d-block">Recorte automático</small>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-check mt-4 pt-2">
-                            <input type="checkbox" class="form-check-input" id="autoMask" @bind="autoMask"
-                                   disabled="@(selectedGarmentType == GarmentType.Lower)" />
-                            <label class="form-check-label fw-semibold" for="autoMask">
-                                Auto-mask
-                            </label>
-                            <small class="text-muted d-block">
-                                @(selectedGarmentType == GarmentType.Lower ? "(Obligatorio para pantalones)" : "(Recomendado)")
-                            </small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        }
-    </div>
-
 
     <div class="text-center mb-4">
         <button class="process-btn"
                 @onclick="ProcessTryOn"
-                disabled="@(isProcessing || personImageData == null || garmentImageData == null)">
+                disabled="@(isProcessing || personImageData == null || (garmentImageData == null && articuloSeleccionado == null))">
             @if (isProcessing)
             {
                 <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
@@ -242,7 +298,7 @@
             }
             else
             {
-                <span>Generar Try-On (@GetGarmentTypeName())</span>
+                <span> Generar Try-On (@GetGarmentTypeName())</span>
             }
         </button>
     </div>
@@ -258,7 +314,6 @@
         </div>
     }
 
-
     @if (!string.IsNullOrEmpty(resultImageUrl))
     {
         <div class="result-card mb-4">
@@ -269,21 +324,20 @@
                 <img src="@resultImageUrl" class="img-fluid rounded shadow-lg" alt="Resultado" style="max-height: 700px;" />
                 <div class="mt-4 d-flex gap-3 justify-content-center">
                     <a href="@resultImageUrl" download="@GetResultFilename()" class="btn btn-action btn-download">
-                        Descargar Imagen
+                        <i class="fa-solid fa-file-arrow-up"></i> Descargar Imagen
                     </a>
                     <button class="btn btn-action btn-reset" @onclick="ClearResult">
-                        Nueva Prueba
+                        <i class="fa-solid fa-arrows-rotate"></i> Nueva Prueba
                     </button>
                 </div>
             </div>
         </div>
     }
 
- 
     <div class="accordion-card">
         <div class="accordion-header" @onclick="ToggleTips">
             <div class="d-flex justify-content-between align-items-center">
-                <span>Consejos para Mejores Resultados</span>
+                <span><i class="fa-solid fa-lightbulb"></i> Consejos para Mejores Resultados</span>
                 <span>@(showTips ? "▼" : "▶")</span>
             </div>
         </div>
@@ -292,15 +346,15 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-lg-6">
-                        <h6 class="text-primary fw-bold mb-3">Foto de la Persona</h6>
+                        <h6 class="text-primary fw-bold mb-3"><i class="fa-solid fa-camera"></i> Foto de la Persona</h6>
 
                         @if (selectedGarmentType == GarmentType.Upper)
                         {
                             <p class="fw-semibold">Para camisas/blusas:</p>
                             <ul class="tips-list">
-                                <li>De frente, mirando a la cámara</li>
-                                <li>Medio cuerpo o torso visible</li>
-                                <li>Brazos ligeramente separados</li>
+                                <li> De frente, mirando a la cámara</li>
+                                <li> Medio cuerpo o torso visible</li>
+                                <li> Brazos ligeramente separados</li>
                                 <li> Ropa simple y ajustada</li>
                                 <li> Fondo sólido (blanco/gris)</li>
                             </ul>
@@ -319,20 +373,20 @@
                         }
                     </div>
                     <div class="col-lg-6">
-                        <h6 class="text-success fw-bold mb-3">Foto de la Prenda</h6>
+                        <h6 class="text-success fw-bold mb-3"> Foto de la Prenda</h6>
                         <ul class="tips-list">
-                            <li> Prenda plana y extendida</li>
-                            <li> Fondo blanco o transparente</li>
-                            <li> Sin arrugas ni dobleces</li>
-                            <li> Bien iluminada</li>
-                            <li> Evitar sombras fuertes</li>
-                            <li> Evitar múltiples prendas</li>
+                            <li>✓ Prenda plana y extendida</li>
+                            <li>✓ Fondo blanco o transparente</li>
+                            <li>✓ Sin arrugas ni dobleces</li>
+                            <li>✓ Bien iluminada</li>
+                            <li>✓ Evitar sombras fuertes</li>
+                            <li>✓ Evitar múltiples prendas</li>
                         </ul>
 
                         @if (selectedGarmentType == GarmentType.Lower)
                         {
                             <div class="alert alert-info alert-custom mt-3">
-                                <strong>Tip para pantalones:</strong> La detección automática (auto-mask) mejora significativamente los resultados.
+                                <strong><i class="fa-solid fa-lightbulb"></i> Tip para pantalones:</strong> La detección automática (auto-mask) mejora significativamente los resultados.
                             </div>
                         }
                     </div>
@@ -356,6 +410,12 @@
     private string? garmentFileName = null;
     private string? garmentImagePreview = null;
 
+    private List<ArticuloListaDTO> todosLosArticulos = new();
+    private ArticuloListaDTO? articuloSeleccionado = null;
+    private string busquedaCatalogo = "";
+    private bool isLoadingCatalog = false;
+    private string modoSeleccionPrenda = "catalogo";
+
     private string? resultImageUrl = null;
 
     private bool isProcessing = false;
@@ -374,6 +434,7 @@
     {
         await CheckApiHealth();
         await LoadStats();
+        await LoadCatalog();
     }
 
     private async Task CheckApiHealth()
@@ -391,6 +452,62 @@
         {
             Console.WriteLine($"Error cargando estadísticas: {ex.Message}");
         }
+    }
+
+    private async Task LoadCatalog()
+    {
+        try
+        {
+            isLoadingCatalog = true;
+            var response = await ArticuloDAO.ObtenerArticulosActivos();
+
+            if (response.IsSuccess && response.ListObject != null)
+            {
+                todosLosArticulos = response.ListObject.ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cargando catálogo: {ex.Message}");
+        }
+        finally
+        {
+            isLoadingCatalog = false;
+        }
+    }
+
+    private IEnumerable<ArticuloListaDTO> articulosFiltrados
+    {
+        get
+        {
+            var query = todosLosArticulos.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(busquedaCatalogo))
+            {
+                query = query.Where(a =>
+                    a.Nombre.Contains(busquedaCatalogo, StringComparison.OrdinalIgnoreCase) ||
+                    a.Marca.Contains(busquedaCatalogo, StringComparison.OrdinalIgnoreCase)
+                );
+            }
+
+            return query;
+        }
+    }
+
+    private void SeleccionarArticulo(ArticuloListaDTO? articulo)
+    {
+        if (articulo == null)
+        {
+            articuloSeleccionado = null;
+            garmentImagePreview = null;
+            return;
+        }
+
+        articuloSeleccionado = articulo;
+        garmentImagePreview = GetImageUrl(articulo);
+        garmentImageData = null;
+        garmentFileName = null;
+        StateHasChanged();
     }
 
     private void OnGarmentTypeChanged(GarmentType newType)
@@ -422,7 +539,16 @@
         {
             return "IMPORTANTE: Foto de CUERPO COMPLETO con piernas visibles";
         }
-        return " De frente, brazos separados, fondo simple";
+        return "✓ De frente, brazos separados, fondo simple";
+    }
+
+    private string GetImageUrl(ArticuloListaDTO articulo)
+    {
+        if (!string.IsNullOrEmpty(articulo.ImagenPrincipal))
+        {
+            return articulo.ImagenPrincipal;
+        }
+        return $"https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=600&h=800&fit=crop&q=80";
     }
 
     private async Task HandlePersonImageSelected(InputFileChangeEventArgs e)
@@ -433,7 +559,7 @@
         {
             if (file.Size > 10 * 1024 * 1024)
             {
-                statusMessage = "La imagen es muy grande. Máximo 10MB.";
+                statusMessage = " La imagen es muy grande. Máximo 10MB.";
                 statusAlertClass = "alert-warning";
                 return;
             }
@@ -448,12 +574,12 @@
 
                 personImagePreview = $"data:{file.ContentType};base64,{Convert.ToBase64String(personImageData)}";
 
-                statusMessage = "Imagen de persona cargada correctamente";
+                statusMessage = " Imagen de persona cargada correctamente";
                 statusAlertClass = "alert-success-custom";
             }
             catch (Exception ex)
             {
-                statusMessage = $"Error cargando imagen: {ex.Message}";
+                statusMessage = $" Error cargando imagen: {ex.Message}";
                 statusAlertClass = "alert-danger";
             }
         }
@@ -465,17 +591,15 @@
 
         if (file != null)
         {
-
             if (file.Size > 10 * 1024 * 1024)
             {
-                statusMessage = "La imagen es muy grande. Máximo 10MB.";
+                statusMessage = " La imagen es muy grande. Máximo 10MB.";
                 statusAlertClass = "alert-warning";
                 return;
             }
 
             try
             {
-
                 using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
                 using var memoryStream = new MemoryStream();
                 await stream.CopyToAsync(memoryStream);
@@ -484,7 +608,10 @@
 
                 garmentImagePreview = $"data:{file.ContentType};base64,{Convert.ToBase64String(garmentImageData)}";
 
-                statusMessage = "Imagen de prenda cargada correctamente";
+                // Limpiar selección de catálogo
+                articuloSeleccionado = null;
+
+                statusMessage = " Imagen de prenda cargada correctamente";
                 statusAlertClass = "alert-success-custom";
             }
             catch (Exception ex)
@@ -495,47 +622,89 @@
         }
     }
 
+    private void ClearGarmentImage()
+    {
+        garmentImageData = null;
+        garmentFileName = null;
+        garmentImagePreview = null;
+        StateHasChanged();
+    }
+
     private async Task ProcessTryOn()
     {
-        if (personImageData == null || garmentImageData == null)
+        if (personImageData == null)
         {
-            statusMessage = "Por favor sube ambas imágenes primero";
+            statusMessage = " Por favor sube la imagen de la persona";
+            statusAlertClass = "alert-warning";
+            return;
+        }
+
+        if (garmentImageData == null && articuloSeleccionado == null)
+        {
+            statusMessage = " Por favor selecciona una prenda del catálogo o sube una imagen";
             statusAlertClass = "alert-warning";
             return;
         }
 
         isProcessing = true;
-        statusMessage = $"Procesando {GetGarmentTypeName()}... Esto puede tardar 1-2 minutos. Por favor espera.";
+        statusMessage = $" Procesando {GetGarmentTypeName()}... Esto puede tardar 1-2 minutos. Por favor espera.";
         statusAlertClass = "alert-info";
         resultImageUrl = null;
 
         try
         {
-            using var personStream = new MemoryStream(personImageData);
-            using var garmentStream = new MemoryStream(garmentImageData);
+            byte[] resultBytes;
 
-            var resultBytes = await TryOnService.ProcessTryOnAsync(
-                personStream,
-                personFileName ?? "person.jpg",
-                garmentStream,
-                garmentFileName ?? "garment.jpg",
-                selectedGarmentType,
-                denoiseSteps,
-                seed,
-                autoCrop,
-                autoMask
-            );
+            using var personStream = new MemoryStream(personImageData);
+
+            if (articuloSeleccionado != null && !string.IsNullOrEmpty(articuloSeleccionado.ImagenPrincipal))
+            {
+                // Usar URL del catálogo
+                resultBytes = await TryOnService.ProcessTryOnMixedAsync(
+                    personStream,
+                    personFileName ?? "person.jpg",
+                    articuloSeleccionado.ImagenPrincipal,
+                    selectedGarmentType,
+                    denoiseSteps,
+                    seed,
+                    autoCrop,
+                    autoMask
+                );
+
+                statusMessage = $"✓ ¡Try-On completado! Prenda: {articuloSeleccionado.Nombre}";
+            }
+            else if (garmentImageData != null)
+            {
+                // Usar archivo subido
+                using var garmentStream = new MemoryStream(garmentImageData);
+
+                resultBytes = await TryOnService.ProcessTryOnAsync(
+                    personStream,
+                    personFileName ?? "person.jpg",
+                    garmentStream,
+                    garmentFileName ?? "garment.jpg",
+                    selectedGarmentType,
+                    denoiseSteps,
+                    seed,
+                    autoCrop,
+                    autoMask
+                );
+
+                statusMessage = "✓ ¡Try-On completado exitosamente!";
+            }
+            else
+            {
+                throw new Exception("No hay imagen de prenda disponible");
+            }
 
             resultImageUrl = $"data:image/jpeg;base64,{Convert.ToBase64String(resultBytes)}";
-
-            statusMessage = $"¡Try-On de {GetGarmentTypeName()} completado exitosamente!";
             statusAlertClass = "alert-success-custom";
 
             await LoadStats();
         }
         catch (Exception ex)
         {
-            statusMessage = $"Error: {ex.Message}";
+            statusMessage = $"✗ Error: {ex.Message}";
             statusAlertClass = "alert-danger";
         }
         finally
@@ -559,7 +728,12 @@
             GarmentType.Dress => "dress",
             _ => "tryon"
         };
-        return $"tryon_{typePrefix}_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
+
+        string garmentInfo = articuloSeleccionado != null
+            ? $"_{articuloSeleccionado.Nombre.Replace(" ", "_")}"
+            : "";
+
+        return $"tryon_{typePrefix}{garmentInfo}_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
     }
 
     private void ToggleAdvancedSettings()

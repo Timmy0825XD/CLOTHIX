@@ -81,13 +81,13 @@
                             </div>
 
                             <div class="info-note">
-                                <p>📍 Esta es tu dirección de envío registrada</p>
+                                <p><i class="fa-solid fa-location-dot"></i> Esta es tu dirección de envío registrada</p>
                             </div>
                         }
                         else
                         {
                             <div class="error-message">
-                                <p>⚠️ No tienes una dirección registrada. Por favor, actualiza tu perfil antes de continuar.</p>
+                                <p> No tienes una dirección registrada. Por favor, actualiza tu perfil antes de continuar.</p>
                             </div>
                         }
 
@@ -216,13 +216,12 @@
                 <div class="resumen-card">
                     <h3>Resumen</h3>
 
-                    <!-- SECCIÓN DE CUPONES -->
                     <div class="cupon-section">
                         @if (cuponAplicado != null)
                         {
                             <div class="cupon-aplicado">
                                 <div class="cupon-info">
-                                    <span class="cupon-icon">🎟️</span>
+                                    <span class="cupon-icon"><i class="fa-solid fa-ticket"></i></span>
                                     <div class="cupon-detalles">
                                         <strong>@cuponAplicado.Codigo</strong>
                                         <small>@cuponAplicado.Descripcion</small>
@@ -247,7 +246,7 @@
                                         disabled="@(string.IsNullOrWhiteSpace(codigoCupon) || validandoCupon)">
                                     @if (validandoCupon)
                                     {
-                                        <span>⏳</span>
+                                        <span><i class="fa-solid fa-hourglass-half"></i></span>
                                     }
                                     else
                                     {
@@ -335,7 +334,7 @@
                     @if (descuentoCupon > 0)
                     {
                         <div class="ahorro-total">
-                            <span>💰 ¡Ahorras @descuentoCupon.ToString("C")!</span>
+                            <span><i class="fa-solid fa-sack-dollar"></i> ¡Ahorras @descuentoCupon.ToString("C")!</span>
                         </div>
                     }
 
@@ -345,7 +344,7 @@
                         {
                             <div class="producto-resumen">
                                 <span>@item.NombreArticulo</span>
-                                <span>x@item.Cantidad</span>
+                                <span>@item.Cantidad</span>
                             </div>
                         }
                     </div>
